@@ -1,6 +1,10 @@
+from .factory import create_app
+
+
 def main() -> None:
     """Starting point."""
-    print("tilescopegui")
+    app = create_app()
+    app.run()
 
 
 if __name__ == "__main__":
