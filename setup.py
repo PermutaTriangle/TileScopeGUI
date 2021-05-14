@@ -32,7 +32,7 @@ setup(
     packages=find_packages(),
     long_description_content_type="text/x-rst",
     long_description=read("README.rst"),
-    install_requires=read("requirements.txt").splitlines(),
+    install_requires=["tilings==2.5.0", "Flask==2.0.0"],
     python_requires=">=3.7",
     include_package_data=True,
     classifiers=[
