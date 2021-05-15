@@ -1,0 +1,39 @@
+{
+  "name": "tilescopegui",
+  "version": "1.0.0",
+  "description": "Front end code for flask app",
+  "main": "index.js",
+  "scripts": {
+    "build": "rimraf ../tilescopegui/static && parcel build --no-source-maps src/index.html --out-dir ../tilescopegui/static",
+    "start": "parcel serve src/index.html",
+    "lint": "eslint src --ext .js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PermutaTriangle/TileScopeGUI.git"
+  },
+  "author": "Permuta Triangle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PermutaTriangle/TileScopeGUI/issues"
+  },
+  "homepage": "https://github.com/PermutaTriangle/TileScopeGUI#readme",
+  "devDependencies": {
+    "@babel/core": "^7.14.2",
+    "@babel/plugin-transform-runtime": "^7.14.2",
+    "@babel/runtime-corejs2": "^7.14.0",
+    "babel-jest": "^26.6.3",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.1",
+    "jest": "^26.6.3",
+    "parcel-bundler": "^1.12.5",
+    "rimraf": "^3.0.2",
+    "sass": "^1.32.13"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "treant-js": "^1.0.1"
+  }
+}
