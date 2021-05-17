@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 
 from ..blueprints import all_blueprints
 from .config import Config
@@ -14,5 +15,6 @@ def create_app(cfg: Config) -> Flask:
     app.register_error_handler(Exception, get_error_handler(app.config["DEBUG"]))
     for blueprint in all_blueprints():
         app.register_blueprint(blueprint)
-    print(app.template_folder)
+    if app.config["DEBUG"]:
+        CORS(app)
     return app

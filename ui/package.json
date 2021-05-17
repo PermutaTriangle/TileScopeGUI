@@ -4,7 +4,7 @@
   "description": "Front end code for flask app",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf ../tilescopegui/static && parcel build --no-source-maps src/index.html --out-dir ../tilescopegui/static",
+    "build": "rimraf ../tilescopegui/static && parcel build --no-source-maps src/index.html --out-dir ../tilescopegui/static --public-url ./static",
     "start": "parcel serve src/index.html",
     "lint": "eslint src --ext .js",
     "test": "jest"
