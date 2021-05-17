@@ -1,2 +1,2 @@
 include tilescopegui/py.typed
-recursive-include docs tilescopegui/static *
+recursive-include tilescopegui/static *
