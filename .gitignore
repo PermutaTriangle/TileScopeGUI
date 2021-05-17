@@ -130,3 +130,6 @@ dmypy.json
 
 # vscode
 .vscode/
+
+# compiled npm stuff
+tilescopegui/static
