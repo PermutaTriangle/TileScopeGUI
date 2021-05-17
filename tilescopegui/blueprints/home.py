@@ -30,6 +30,6 @@ def static(path: str) -> Response:
 @home_blueprint.route("/api/test/<int:x>", methods=["POST"])
 def endpoint_test(x: int) -> Dict[str, Union[int, str]]:
     """Test to see if js stuff works, TODO: REMOVE."""
-    data = request.get_json()
+    data: dict = request.get_json()
     _b: str = data["b"]
     return {"a": x ** 2, "b": _b}
