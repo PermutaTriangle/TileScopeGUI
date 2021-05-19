@@ -29,7 +29,7 @@ setup(
         "Source": "https://github.com/PermutaTriangle/TileScopeGUI",
         "Tracker": "https://github.com/PermutaTriangle/TileScopeGUI/issues",
     },
-    packages=find_packages(),
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     long_description_content_type="text/x-rst",
     long_description=read("README.rst"),
     install_requires=["tilings==2.5.0", "Flask==2.0.0", "Flask-Cors==3.0.10"],
