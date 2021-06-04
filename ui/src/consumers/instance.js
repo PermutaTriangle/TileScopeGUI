@@ -5,6 +5,9 @@ const host = 'http://127.0.0.1:5000';
 const apiConsumer = axios.create({
   baseURL: `${host}/api`,
   timeout: 1000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 const errorToResponse = (error) => {
@@ -22,8 +25,10 @@ const apiGet = async (path, config = null) => {
 };
 
 const apiPost = async (path, data, config = null) => {
+  console.log(data);
   try {
-    const res = await apiConsumer.post(path, data, config);
+    const jsonData = JSON.stringify(data);
+    const res = await apiConsumer.post(path, jsonData, config);
     return res;
   } catch (error) {
     return errorToResponse(error);

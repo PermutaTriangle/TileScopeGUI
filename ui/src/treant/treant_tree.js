@@ -4,16 +4,18 @@ import TreantUtils from './treant_utils';
 import NodeDB from './node_db';
 
 class Tree {
+  static doNothing() {}
+
   constructor(jsonConfig, treeId) {
     this.initJsonConfig = jsonConfig;
     this.initTreeId = treeId;
 
     this.id = treeId;
 
-    this.CONFIG = TreantUtils.createMerge(Tree.CONFIG, jsonConfig.chart);
-    this.drawArea = TreantUtils.findEl(this.CONFIG.container, true);
+    this.cfg = TreantUtils.createMerge(Tree.CONFIG, jsonConfig.chart);
+    this.drawArea = TreantUtils.findEl(this.cfg.container, true);
     if (!this.drawArea) {
-      throw new Error(`Failed to find element by selector "${this.CONFIG.container}"`);
+      throw new Error(`Failed to find element by selector "${this.cfg.container}"`);
     }
 
     TreantUtils.addClass(this.drawArea, 'Treant');
@@ -49,12 +51,13 @@ class Tree {
    * @returns {TreeNode}
    */
   addNode(parentTreeNode, nodeDefinition) {
-    this.CONFIG.callback.onBeforeAddNode.apply(this, [parentTreeNode, nodeDefinition]);
-    const oNewNode = this.nodeDB.createNode(nodeDefinition, parentTreeNode.id, this);
+    this.cfg.callback.onBeforeAddNode.apply(this, [parentTreeNode, nodeDefinition]);
+    const pId = parentTreeNode === null ? -1 : parentTreeNode.id;
+    const oNewNode = this.nodeDB.createNode(nodeDefinition, pId, this);
     oNewNode.createGeometry(this);
     oNewNode.parent().createSwitchGeometry(this);
     this.positionTree();
-    this.CONFIG.callback.onAfterAddNode.apply(this, [oNewNode, parentTreeNode, nodeDefinition]);
+    this.cfg.callback.onAfterAddNode.apply(this, [oNewNode, parentTreeNode, nodeDefinition]);
     return oNewNode;
   }
 
@@ -78,10 +81,10 @@ class Tree {
     this.secondWalk(root, 0, 0, 0);
     this.positionNodes();
 
-    if (this.CONFIG.animateOnInit) {
+    if (this.cfg.animateOnInit) {
       setTimeout(() => {
         root.toggleCollapse();
-      }, this.CONFIG.animateOnInitDelay);
+      }, this.cfg.animateOnInitDelay);
     }
 
     if (!this.loaded) {
@@ -89,7 +92,7 @@ class Tree {
       if (Object.prototype.toString.call(callback) === '[object Function]') {
         callback(self);
       }
-      self.CONFIG.callback.onTreeLoaded.apply(self, [root]);
+      self.cfg.callback.onTreeLoaded.apply(self, [root]);
       this.loaded = true;
     }
   }
@@ -114,11 +117,11 @@ class Tree {
 
     const leftSibling = node.leftSibling();
 
-    if (node.childrenCount() === 0 || level === this.CONFIG.maxDepth) {
+    if (node.childrenCount() === 0 || level === this.cfg.maxDepth) {
       // set preliminary x-coordinate
       if (leftSibling) {
         // eslint-disable-next-line no-param-reassign
-        node.prelim = leftSibling.prelim + leftSibling.size() + this.CONFIG.siblingSeparation;
+        node.prelim = leftSibling.prelim + leftSibling.size() + this.cfg.siblingSeparation;
       } else {
         // eslint-disable-next-line no-param-reassign
         node.prelim = 0;
@@ -133,7 +136,7 @@ class Tree {
 
       if (leftSibling) {
         // eslint-disable-next-line no-param-reassign
-        node.prelim = leftSibling.prelim + leftSibling.size() + this.CONFIG.siblingSeparation;
+        node.prelim = leftSibling.prelim + leftSibling.size() + this.cfg.siblingSeparation;
         // eslint-disable-next-line no-param-reassign
         node.modifier = node.prelim - midPoint;
         this.apportion(node, level);
@@ -168,7 +171,7 @@ class Tree {
     let firstChild = node.firstChild();
     let firstChildLeftNeighbor = firstChild.leftNeighbor();
     let compareDepth = 1;
-    const depthToStop = this.CONFIG.maxDepth - level;
+    const depthToStop = this.cfg.maxDepth - level;
 
     while (firstChild && firstChildLeftNeighbor && compareDepth <= depthToStop) {
       // calculate the position of the firstChild, according to the position of firstChildLeftNeighbor
@@ -197,7 +200,7 @@ class Tree {
         firstChildLeftNeighbor.prelim +
         modifierSumLeft +
         firstChildLeftNeighbor.size() +
-        this.CONFIG.subTeeSeparation -
+        this.cfg.subTeeSeparation -
         (firstChild.prelim + modifierSumRight);
 
       if (totalGap > 0) {
@@ -246,14 +249,14 @@ class Tree {
    * RootOrientations of EAST or WEST.)
    */
   secondWalk(node, level, X, Y) {
-    if (level > this.CONFIG.maxDepth) {
+    if (level > this.cfg.maxDepth) {
       return;
     }
 
     const xTmp = node.prelim + X;
     const yTmp = Y;
-    const align = this.CONFIG.nodeAlign;
-    const orient = this.CONFIG.rootOrientation;
+    const align = this.cfg.nodeAlign;
+    const orient = this.cfg.rootOrientation;
     let levelHeight;
     let nodesizeTmp;
 
@@ -313,7 +316,7 @@ class Tree {
     }
 
     if (node.childrenCount() !== 0) {
-      if (node.id === 0 && this.CONFIG.hideRootNode) {
+      if (node.id === 0 && this.cfg.hideRootNode) {
         // ako je root node Hiden onda nemoj njegovu dijecu pomaknut po Y osi za Level separation, neka ona budu na vrhu
         this.secondWalk(node.firstChild(), level + 1, X + node.modifier, Y);
       } else {
@@ -321,7 +324,7 @@ class Tree {
           node.firstChild(),
           level + 1,
           X + node.modifier,
-          Y + levelHeight + this.CONFIG.levelSeparation,
+          Y + levelHeight + this.cfg.levelSeparation,
         );
       }
     }
@@ -364,21 +367,15 @@ class Tree {
     for (let i = 0, len = this.nodeDB.db.length, node = this.nodeDB.get(i); i < len; i += 1) {
       node = this.nodeDB.get(i);
 
-      self.CONFIG.callback.onBeforePositionNode.apply(self, [node, i, containerCenter, treeCenter]);
+      self.cfg.callback.onBeforePositionNode.apply(self, [node, i, containerCenter, treeCenter]);
 
-      if (node.id === 0 && this.CONFIG.hideRootNode) {
-        self.CONFIG.callback.onAfterPositionNode.apply(self, [
-          node,
-          i,
-          containerCenter,
-          treeCenter,
-        ]);
+      if (node.id === 0 && this.cfg.hideRootNode) {
+        self.cfg.callback.onAfterPositionNode.apply(self, [node, i, containerCenter, treeCenter]);
       } else {
         // if the tree is smaller than the draw area, then center the tree within drawing area
-        node.X +=
-          negOffsetX + (treeWidth < this.drawArea.clientWidth ? deltaX : this.CONFIG.padding);
+        node.X += negOffsetX + (treeWidth < this.drawArea.clientWidth ? deltaX : this.cfg.padding);
         node.Y +=
-          negOffsetY + (treeHeight < this.drawArea.clientHeight ? deltaY : this.CONFIG.padding);
+          negOffsetY + (treeHeight < this.drawArea.clientHeight ? deltaY : this.cfg.padding);
 
         const collapsedParent = node.collapsedParent();
         let hidePoint = null;
@@ -397,19 +394,14 @@ class Tree {
           node.positioned = true;
         }
 
-        if (node.id !== 0 && !(node.parent().id === 0 && this.CONFIG.hideRootNode)) {
+        if (node.id !== 0 && !(node.parent().id === 0 && this.cfg.hideRootNode)) {
           this.setConnectionToParent(node, hidePoint); // skip the root node
-        } else if (!this.CONFIG.hideRootNode && node.drawLineThrough) {
+        } else if (!this.cfg.hideRootNode && node.drawLineThrough) {
           // drawlinethrough is performed for for the root node also
           node.drawLineThroughMe();
         }
 
-        self.CONFIG.callback.onAfterPositionNode.apply(self, [
-          node,
-          i,
-          containerCenter,
-          treeCenter,
-        ]);
+        self.cfg.callback.onAfterPositionNode.apply(self, [node, i, containerCenter, treeCenter]);
       }
     }
   }
@@ -424,17 +416,17 @@ class Tree {
     const viewWidth =
       treeWidth < this.drawArea.clientWidth
         ? this.drawArea.clientWidth
-        : treeWidth + this.CONFIG.padding * 2;
+        : treeWidth + this.cfg.padding * 2;
     const viewHeight =
       treeHeight < this.drawArea.clientHeight
         ? this.drawArea.clientHeight
-        : treeHeight + this.CONFIG.padding * 2;
+        : treeHeight + this.cfg.padding * 2;
 
     this.raphael.setSize(viewWidth, viewHeight);
 
-    if (this.CONFIG.scrollbar === 'resize') {
+    if (this.cfg.scrollbar === 'resize') {
       TreantUtils.setDimensions(this.drawArea, viewWidth, viewHeight);
-    } else if (this.CONFIG.scrollbar === 'native') {
+    } else if (this.cfg.scrollbar === 'native') {
       if (this.drawArea.clientWidth < treeWidth) {
         // is overflow-x necessary
         this.drawArea.style.overflowX = 'auto';
@@ -446,7 +438,7 @@ class Tree {
       }
     }
     // Fancy scrollbar relies heavily on jQuery, so guarding with if ( $ )
-    else if (this.CONFIG.scrollbar === 'fancy') {
+    else if (this.cfg.scrollbar === 'fancy') {
       const jqDrawArea = $(this.drawArea);
       if (jqDrawArea.hasClass('ps-container')) {
         // znaci da je 'fancy' vec inicijaliziran, treba updateat
@@ -467,7 +459,7 @@ class Tree {
 
         mainContainer.perfectScrollbar();
       }
-    } // else this.CONFIG.scrollbar == 'None'
+    }
   }
 
   /**
@@ -480,7 +472,7 @@ class Tree {
     let connLine;
     const parent = stacked ? this.nodeDB.get(stacked) : treeNode.parent();
     const pathString = hidePoint
-      ? this.getPointPathString(hidePoint)
+      ? Tree.getPointPathString(hidePoint)
       : this.getPathString(parent, treeNode, stacked);
 
     if (this.connectionStore[treeNode.id]) {
@@ -553,8 +545,8 @@ class Tree {
       {
         path: pathString.charAt(0) === '_' ? pathString.substring(1) : pathString, // remove the "_" prefix if it exists
       },
-      this.CONFIG.animation.connectorsSpeed,
-      this.CONFIG.animation.connectorsAnimation,
+      this.cfg.animation.connectorsSpeed,
+      this.cfg.animation.connectorsAnimation,
       () => {
         if (pathString.charAt(0) === '_') {
           // animation is hiding the path, hide it at the and of animation
@@ -576,7 +568,7 @@ class Tree {
   getPathString(fromNode, toNode, stacked) {
     const startPoint = fromNode.connectorPoint(true);
     const endPoint = toNode.connectorPoint(false);
-    const orientation = this.CONFIG.rootOrientation;
+    const orientation = this.cfg.rootOrientation;
     const connType = fromNode.connStyle.type;
     const P1 = {};
     const P2 = {};
@@ -732,26 +724,16 @@ Tree.CONFIG = {
   },
 
   callback: {
-    // eslint-disable-next-line no-unused-vars
-    onCreateNode(treeNode, treeNodeDom) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onCreateNodeCollapseSwitch(treeNode, treeNodeDom, switchDom) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onAfterAddNode(newTreeNode, parentTreeNode, nodeStructure) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onBeforeAddNode(parentTreeNode, nodeStructure) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onAfterPositionNode(treeNode, nodeDbIndex, containerCenter, treeCenter) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onBeforePositionNode(treeNode, nodeDbIndex, containerCenter, treeCenter) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onToggleCollapseFinished(treeNode, bIsCollapsed) {}, // this = Tree
-    // eslint-disable-next-line no-unused-vars
-    onAfterClickCollapseSwitch(nodeSwitch, event) {}, // this = TreeNode
-    // eslint-disable-next-line no-unused-vars
-    onBeforeClickCollapseSwitch(nodeSwitch, event) {}, // this = TreeNode
-    // eslint-disable-next-line no-unused-vars
-    onTreeLoaded(rootTreeNode) {}, // this = Tree
+    onCreateNode: Tree.doNothing, // (treeNode, treeNodeDom)
+    onCreateNodeCollapseSwitch: Tree.doNothing, // (treeNode, treeNodeDom, switchDom)
+    onAfterAddNode: Tree.doNothing, // (newTreeNode, parentTreeNode, nodeStructure)
+    onBeforeAddNode: Tree.doNothing, // (parentTreeNode, nodeStructure)
+    onAfterPositionNode: Tree.doNothing, // (treeNode, nodeDbIndex, containerCenter, treeCenter)
+    onBeforePositionNode: Tree.doNothing, // (treeNode, nodeDbIndex, containerCenter, treeCenter)
+    onToggleCollapseFinished: Tree.doNothing, // (treeNode, bIsCollapsed)
+    onAfterClickCollapseSwitch: Tree.doNothing, // (nodeSwitch, event)
+    onBeforeClickCollapseSwitch: Tree.doNothing, // (nodeSwitch, event)
+    onTreeLoaded: Tree.doNothing, // (rootTreeNode)
   },
 };
 

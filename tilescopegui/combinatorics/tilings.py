@@ -1,13 +1,18 @@
+import base64
 from typing import Dict, List, Tuple
 
 from permuta.patterns.perm import Perm
 from tilings.tiling import Tiling
+
+from .strategies import verify_to_json
 
 LabelCache = Dict[Tuple[Tuple[Perm, ...], bool], str]
 
 
 class Labeller:
     """Symbols for cells to plot tiling."""
+
+    # pylint: disable=too-many-instance-attributes
 
     _EMPTY_STR = " "
     _POS_POINT_STR = "\u25cf"
@@ -32,12 +37,21 @@ class Labeller:
     }
 
     @classmethod
-    def get_label_matrix(cls, tiling: Tiling) -> List[List[str]]:
+    def get_gui_format(cls, tiling: Tiling) -> dict:
         """Return a matrix corresponding to the tiling of symbols that should be
         drawn in each cell."""
         labeller = cls(tiling)
         labeller.find_symbols()
-        return labeller.img
+        labeller.find_requirements()
+        labeller.find_crossing()
+        labeller.find_assumptions()
+        return {
+            "matrix": labeller.img,
+            "label_map": labeller.labels_to_basis,
+            "crossing": labeller.crossing_obs,
+            "requirements": labeller.requirements,
+            "assumptions": labeller.assumptions,
+        }
 
     def __init__(self, tiling: Tiling) -> None:
         self.tiling = tiling
@@ -47,6 +61,10 @@ class Labeller:
         self.img: List[List[str]] = [
             [Labeller._EMPTY_STR for _ in range(cols)] for _ in range(self.rows)
         ]
+        self.labels_to_basis: Dict[str, str] = {}
+        self.crossing_obs: List[str] = []
+        self.requirements: List[str] = []
+        self.assumptions: List[str] = []
 
     def _get_label(self, basis: List[Perm], positive: bool) -> str:
         key = (tuple(basis), positive)
@@ -59,7 +77,41 @@ class Labeller:
 
     def find_symbols(self) -> None:
         """Find symbols for a tiling."""
+        blacklist = set(Labeller._INIT_CACHE.values())
         for cell, (obstructions, _) in sorted(self.tiling.cell_basis().items()):
-            self.img[self.rows - cell[1] - 1][cell[0]] = self._get_label(
-                sorted(obstructions), cell in self.tiling.positive_cells
-            )
+            positive = cell in self.tiling.positive_cells
+            label = self._get_label(sorted(obstructions), positive)
+            self.img[self.rows - cell[1] - 1][cell[0]] = label
+            if label not in blacklist:
+                self.labels_to_basis[label] = (
+                    f"Av{'+' if positive else ''}"
+                    f"({', '.join(str(gp) for gp in obstructions)})"
+                )
+        if Labeller._EMPTY_STR in self.labels_to_basis:
+            del self.labels_to_basis[Labeller._EMPTY_STR]
+
+    def find_crossing(self) -> None:
+        """Find crossing obstructions for a tiling."""
+        for obs in self.tiling.obstructions:
+            if not obs.is_single_cell():
+                self.crossing_obs.append(str(obs))
+
+    def find_requirements(self) -> None:
+        """Find requirements for a tiling."""
+        for reqs in self.tiling.requirements:
+            self.requirements.append(", ".join(str(req) for req in reqs))
+
+    def find_assumptions(self) -> None:
+        """Find assumptions for a tiling."""
+        for assumption in enumerate(self.tiling.assumptions):
+            self.assumptions.append(str(assumption))
+
+
+def tiling_to_gui_json(tiling: Tiling) -> dict:
+    """Convert tiling to a json for the ui."""
+    return {
+        "tiling": tiling.to_jsonable(),
+        "plot": Labeller.get_gui_format(tiling),
+        "key": base64.b64encode(tiling.to_bytes()).decode("utf-8"),
+        "verified": verify_to_json(tiling),
+    }

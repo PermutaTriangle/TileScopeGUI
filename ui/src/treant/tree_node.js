@@ -28,20 +28,20 @@ class TreeNode {
     this.meta = nodeStructure.meta || {};
     this.image = nodeStructure.image || null;
 
-    this.link = TreantUtils.createMerge(tree.CONFIG.node.link, nodeStructure.link);
+    this.link = TreantUtils.createMerge(tree.cfg.node.link, nodeStructure.link);
 
-    this.connStyle = TreantUtils.createMerge(tree.CONFIG.connectors, nodeStructure.connectors);
+    this.connStyle = TreantUtils.createMerge(tree.cfg.connectors, nodeStructure.connectors);
     this.connector = null;
 
     this.drawLineThrough =
       nodeStructure.drawLineThrough === false
         ? false
-        : nodeStructure.drawLineThrough || tree.CONFIG.node.drawLineThrough;
+        : nodeStructure.drawLineThrough || tree.cfg.node.drawLineThrough;
 
     this.collapsable =
       nodeStructure.collapsable === false
         ? false
-        : nodeStructure.collapsable || tree.CONFIG.node.collapsable;
+        : nodeStructure.collapsable || tree.cfg.node.collapsable;
     this.collapsed = nodeStructure.collapsed;
 
     this.text = nodeStructure.text;
@@ -49,7 +49,7 @@ class TreeNode {
     // '.node' DIV
     this.nodeInnerHTML = nodeStructure.innerHTML;
     this.nodeHTMLclass =
-      (tree.CONFIG.node.HTMLclass ? tree.CONFIG.node.HTMLclass : '') + // globally defined class for the nodex
+      (tree.cfg.node.HTMLclass ? tree.cfg.node.HTMLclass : '') + // globally defined class for the nodex
       (nodeStructure.HTMLclass ? ` ${nodeStructure.HTMLclass}` : ''); // + specific node class
 
     this.nodeHTMLid = nodeStructure.HTMLid;
@@ -68,7 +68,7 @@ class TreeNode {
    * @returns {object}
    */
   getTreeConfig() {
-    return this.getTree().CONFIG;
+    return this.getTree().cfg;
   }
 
   /**
@@ -248,7 +248,7 @@ class TreeNode {
 
   // returns start or the end point of the connector line, origin is upper-left
   connectorPoint(startPoint) {
-    let orient = this.Tree().CONFIG.rootOrientation;
+    let orient = this.Tree().cfg.rootOrientation;
     const point = {};
 
     if (this.stackParentId) {
@@ -263,23 +263,23 @@ class TreeNode {
     // if pseudo, a virtual center is used
     if (orient === 'NORTH') {
       point.x = this.pseudo
-        ? this.X - this.Tree().CONFIG.subTeeSeparation / 2
+        ? this.X - this.Tree().cfg.subTeeSeparation / 2
         : this.X + this.width / 2;
       point.y = startPoint ? this.Y + this.height : this.Y;
     } else if (orient === 'SOUTH') {
       point.x = this.pseudo
-        ? this.X - this.Tree().CONFIG.subTeeSeparation / 2
+        ? this.X - this.Tree().cfg.subTeeSeparation / 2
         : this.X + this.width / 2;
       point.y = startPoint ? this.Y : this.Y + this.height;
     } else if (orient === 'EAST') {
       point.x = startPoint ? this.X : this.X + this.width;
       point.y = this.pseudo
-        ? this.Y - this.Tree().CONFIG.subTeeSeparation / 2
+        ? this.Y - this.Tree().cfg.subTeeSeparation / 2
         : this.Y + this.height / 2;
     } else if (orient === 'WEST') {
       point.x = startPoint ? this.X + this.width : this.X;
       point.y = this.pseudo
-        ? this.Y - this.Tree().CONFIG.subTeeSeparation / 2
+        ? this.Y - this.Tree().cfg.subTeeSeparation / 2
         : this.Y + this.height / 2;
     }
     return point;
@@ -354,11 +354,11 @@ class TreeNode {
         () => {
           // set the flag after the animation
           oTree.inAnimation = false;
-          oTree.CONFIG.callback.onToggleCollapseFinished.apply(oTree, [self, self.collapsed]);
+          oTree.cfg.callback.onToggleCollapseFinished.apply(oTree, [self, self.collapsed]);
         },
-        oTree.CONFIG.animation.nodeSpeed > oTree.CONFIG.animation.connectorsSpeed
-          ? oTree.CONFIG.animation.nodeSpeed
-          : oTree.CONFIG.animation.connectorsSpeed,
+        oTree.cfg.animation.nodeSpeed > oTree.cfg.animation.connectorsSpeed
+          ? oTree.cfg.animation.nodeSpeed
+          : oTree.cfg.animation.connectorsSpeed,
       );
     }
   }
@@ -421,8 +421,8 @@ class TreeNode {
     if (oPath) {
       oPath.animate(
         { opacity: 0 },
-        oTree.CONFIG.animation.connectorsSpeed,
-        oTree.CONFIG.animation.connectorsAnimation,
+        oTree.cfg.animation.connectorsSpeed,
+        oTree.cfg.animation.connectorsAnimation,
       );
     }
   }
@@ -438,7 +438,7 @@ class TreeNode {
       opacity: 1,
     };
     const config = this.getTreeConfig();
-
+    const self = this;
     // if the node was hidden, update opacity and position
     $(this.nodeDOM).animate(
       oNewState,
@@ -446,7 +446,11 @@ class TreeNode {
       config.animation.nodeAnimation,
       () => {
         // $.animate applies "overflow:hidden" to the node, remove it to avoid visual problems
-        this.style.overflow = '';
+        if (self.style) {
+          self.style.overflow = '';
+        } else {
+          self.style = { overflow: '' };
+        }
       },
     );
 
@@ -464,8 +468,8 @@ class TreeNode {
     if (oPath) {
       oPath.animate(
         { opacity: 1 },
-        oTree.CONFIG.animation.connectorsSpeed,
-        oTree.CONFIG.animation.connectorsAnimation,
+        oTree.cfg.animation.connectorsSpeed,
+        oTree.cfg.animation.connectorsAnimation,
       );
     }
   }
@@ -570,7 +574,7 @@ class TreeNode {
    * @param {Tree} tree
    */
   createGeometry(tree) {
-    if (this.id === 0 && tree.CONFIG.hideRootNode) {
+    if (this.id === 0 && tree.cfg.hideRootNode) {
       this.width = 0;
       this.height = 0;
       return;
@@ -606,7 +610,7 @@ class TreeNode {
       }
     }
 
-    tree.CONFIG.callback.onCreateNode.apply(tree, [this, node]);
+    tree.cfg.callback.onCreateNode.apply(tree, [this, node]);
 
     /// //////// APPEND all //////////////
     drawArea.appendChild(node);
@@ -636,7 +640,7 @@ class TreeNode {
         el.className += ' collapsed';
       }
 
-      tree.CONFIG.callback.onCreateNodeCollapseSwitch.apply(tree, [this, el, nodeSwitchEl]);
+      tree.cfg.callback.onCreateNodeCollapseSwitch.apply(tree, [this, el, nodeSwitchEl]);
     }
     return nodeSwitchEl;
   }

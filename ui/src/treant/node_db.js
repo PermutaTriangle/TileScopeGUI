@@ -55,7 +55,7 @@ class NodeDB {
       }
     };
 
-    if (tree.CONFIG.animateOnInit) {
+    if (tree.cfg.animateOnInit) {
       // eslint-disable-next-line no-param-reassign
       nodeStructure.collapsed = true;
     }
