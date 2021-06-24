@@ -1,0 +1,16 @@
+#top-modal-figure .non-empty-cell:hover {
+  background-color: lightblue;
+}
+
+.modal-spec-node {
+  line-height: normal;
+}
+
+.accordion-item li {
+  color: black;
+}
+
+#top-modal-figure :is(table, .spec-node-inner-content) {
+  margin-left: auto;
+  margin-right: auto;
+}

@@ -1,0 +1,16 @@
+//; // radial-gradient(circle at 0% 0%, #373b52, #252736 51%, #1d1e26);
+.modal-header {
+  background-color: black;
+  color: wheat;
+  border-bottom: 0ex;
+}
+.modal-body {
+  background-image: radial-gradient(circle at 0% 0%, #373b52, #252736 51%, #1d1e26);
+  color: white;
+}
+
+#popup-content {
+  //display: flex;
+  //flex-direction: column;
+  //align-items: center;
+}
