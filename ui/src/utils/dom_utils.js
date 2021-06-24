@@ -9,4 +9,4 @@ const downloadJson = (content, fileName) => {
   a.click();
 };
 
-export { downloadJson };
+export default downloadJson;

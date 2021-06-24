@@ -29,7 +29,7 @@ class TilingDisplay {
   addTopFigure() {
     const container = document.createElement('div');
     container.id = 'top-modal-figure';
-    //container.classList.add('d-flex p-2');
+    // container.classList.add('d-flex p-2');
     container.append(this.plotDiv);
     this.parentDom.append(container);
   }
