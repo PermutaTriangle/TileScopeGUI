@@ -13,9 +13,9 @@ strategies_blueprint = Blueprint(
 @strategies_blueprint.route("/factor", methods=["POST"])
 def factor() -> dict:
     """Apply factor strategy to given tiling."""
-    data = request.get_json()
+    data: dict = request.get_json()
     try:
-        tiling = Tiling.from_dict(data)
+        tiling: Tiling = Tiling.from_dict(data)
     except (TypeError, KeyError, ValueError) as exc:
         raise BadRequest() from exc
     strats = FactorFactory()(tiling)

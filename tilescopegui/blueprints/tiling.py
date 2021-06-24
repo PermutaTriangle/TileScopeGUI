@@ -10,12 +10,11 @@ tiling_blueprint = Blueprint("tiling_blueprint", __name__, url_prefix="/api/tili
 @tiling_blueprint.route("/init", methods=["POST"])
 def tiling_from_basis() -> dict:
     """Get a root tiling."""
-    data = request.get_json(silent=False)
-    print(type(data))
+    data: dict = request.get_json(silent=False)
     try:
         if isinstance(data, str):
             print(data)
-            tiling = Tiling.from_string(data)
+            tiling: Tiling = Tiling.from_string(data)
         else:
             tiling = Tiling.from_dict(data)
     except (TypeError, KeyError, ValueError) as exc:

@@ -97,4 +97,4 @@ def test_labeller():
     ]
 
     for t in tilings:
-        assert str2mat(t) == Labeller.get_label_matrix(t)
+        assert str2mat(t) == Labeller.get_gui_format(t)["matrix"]
