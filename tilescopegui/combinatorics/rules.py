@@ -1,9 +1,10 @@
 from comb_spec_searcher.strategies.rule import AbstractRule
+from tilings import GriddedPerm, Tiling
 
 from .tilings import tiling_to_gui_json
 
 
-def rule_as_json(rule: AbstractRule) -> dict:
+def rule_as_json(rule: AbstractRule[Tiling, GriddedPerm]) -> dict:
     """Convert rule to json."""
     return {
         "class_module": rule.__class__.__module__,
