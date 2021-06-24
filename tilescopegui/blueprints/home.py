@@ -1,6 +1,6 @@
-from typing import Dict, Text, Union
+from typing import Text
 
-from flask import Blueprint, render_template, request, send_from_directory
+from flask import Blueprint, render_template, send_from_directory
 from werkzeug import Response
 from werkzeug.exceptions import BadRequest, NotFound
 
@@ -25,12 +25,3 @@ def static(path: str) -> Response:
     if path == "index.html":
         raise NotFound()
     return send_from_directory(PathUtil.static_dir(), path)
-
-
-@home_blueprint.route("/api/test/<int:x>", methods=["POST"])
-def endpoint_test(x: int) -> Dict[str, Union[int, str]]:
-    """Test to see if js stuff works, TODO: REMOVE."""
-    data = request.get_json()
-    assert isinstance(data, dict)
-    _b: str = data["b"]
-    return {"a": x ** 2, "b": _b}

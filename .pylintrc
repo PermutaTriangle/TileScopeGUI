@@ -6,7 +6,7 @@ disable=bad-continuation,
         missing-module-docstring,
         fixme,
         unsubscriptable-object,
-good-names=i,j,n,k,x,y,f,_
+good-names=i,j,n,k,x,y,f,gp,_
 
 [SIMILARITIES]
 ignore-imports=yes

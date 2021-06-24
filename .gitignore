@@ -133,3 +133,6 @@ dmypy.json
 
 # compiled npm stuff
 tilescopegui/static
+
+# Sandbox file
+sandbox.py
