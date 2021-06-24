@@ -1,3 +1,8 @@
+// Scraped from https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+
+/**
+ * A collection of predefined status codes.
+ */
 const statusCode = {
   /**
    * The server has received the request headers and the client should proceed

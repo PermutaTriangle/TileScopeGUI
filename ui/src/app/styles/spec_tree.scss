@@ -23,6 +23,20 @@ svg {
   background-color: rgb(78, 145, 78);
 }
 
+.spec-node-verified > {
+  border-color: rgb(78, 145, 78);
+  border: 2px;
+}
+
+.spec-node-duplicate > .spec-node-label {
+  background-color: rgb(80, 48, 168);
+}
+
+.spec-node-duplicate > {
+  border-color: rgb(80, 48, 168);
+  border: 2px;
+}
+
 .spec-node {
   width: max-content;
   text-align: left;
@@ -36,11 +50,6 @@ svg {
   align-items: center;
   margin: auto;
   max-width: 300px;
-}
-
-.spec-node-verified > {
-  border-color: rgb(78, 145, 78);
-  border: 2px;
 }
 
 .spec-node-container {
@@ -103,7 +112,7 @@ pre {
   background-color: rgb(212, 212, 212);
 }
 
-.and-gate {
+.rule-node {
   margin-top: -11px;
   margin-left: -1px;
   border-top-left-radius: 14px;
@@ -114,12 +123,12 @@ pre {
   background-color: white;
 }
 
-.and-gate > span {
+.rule-node > span {
   top: 50%;
   margin: 50% auto;
 }
 
-.and-gate:empty {
+.rule-node:empty {
   background-image: repeating-linear-gradient(
     -45deg,
     transparent,

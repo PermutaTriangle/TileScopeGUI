@@ -550,7 +550,6 @@ class TreeNode {
     // get some element by ID and clone its structure into a node
     if (this.nodeInnerHTML.charAt(0) === '#') {
       const elem = document.getElementById(this.nodeInnerHTML.substring(1));
-      console.log(elem);
       if (elem) {
         // eslint-disable-next-line no-param-reassign
         node = elem.cloneNode(true);

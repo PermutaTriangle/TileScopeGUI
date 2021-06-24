@@ -3,6 +3,8 @@ import './styles/modal.scss';
 import $ from 'jquery';
 import { Modal as BootstrapModal } from 'bootstrap';
 
+import TilingDisplay from './tiling_display';
+
 class Modal {
   static getHTML() {
     return `<div
@@ -15,11 +17,11 @@ class Modal {
       <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Expand</h5>
+            <h5 class="modal-title" id="exampleModalLabel">TEMP TITLE (replace with btns)</h5>
             <button
               id="modal-close"
               type="button"
-              class="btn btn-close"
+              class="btn-close btn-close-white"
               data-bs-dismiss="modal"
               aria-label="Close"
             ></button>
@@ -30,39 +32,14 @@ class Modal {
     </div>;`;
   }
 
-  constructor(tiling, nodeHTML, expanded, callback) {
-    this.tiling = tiling;
-    this.expanded = expanded;
+  static createAndDisplayModalDom() {
     $('body').append(Modal.getHTML());
-    const model = new BootstrapModal(document.getElementById('popup'), { keyboard: false });
-    model.show();
-    $('#modal-close').on('click', () => {
-      $('#popup').remove();
-      document.body.lastChild.remove(); // Bootstrap seems to add some trailing ";", remove that
-    });
-    this.baseDiv = Modal.createFigure(nodeHTML);
-    this.addTopFigure();
-    $('#popup-content').append('<Button id="copy-json">JSON</Button>');
-    $('#copy-json').on('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(this.tiling.tilingJson));
-    });
-    if (this.tiling.plot.crossing) {
-      $('#popup-content').append('<p>Crossing obstructions</p>');
-      $('#popup-content').append(
-        `<ol>${this.tiling.plot.crossing.map((v) => `<li>${v}</li>`).join('')}</ol>`,
-      );
-    }
-    if (this.tiling.plot.requirements) {
-      $('#popup-content').append('<p>Requirements</p>');
-      $('#popup-content').append(
-        `<ol>${this.tiling.plot.requirements.map((v) => `<li>${v}</li>`).join('')}</ol>`,
-      );
-    }
-
-    $('#popup-content').append('<h6>Strategies</h6><p>TODO</p>');
+    const modal = new BootstrapModal(document.getElementById('popup'), { keyboard: false });
+    modal.toggle();
+    return modal;
   }
 
-  static createFigure(nodeHTML) {
+  static transformFigure(nodeHTML) {
     const phantom = document.createElement('div');
     phantom.innerHTML = nodeHTML;
     const div = phantom.children[0].children[1];
@@ -79,11 +56,46 @@ class Modal {
     return div;
   }
 
-  addTopFigure() {
-    const container = document.createElement('div');
-    container.id = 'top-modal-figure';
-    container.append(this.baseDiv);
-    $('#popup-content').append(container);
+  static render(tiling, nodeHTML, expanded, errorDisplay, callback) {
+    (() => new Modal(tiling, nodeHTML, expanded, errorDisplay, callback))();
+  }
+
+  constructor(tiling, nodeHTML, expanded, errorDisplay, callback) {
+    this.modal = Modal.createAndDisplayModalDom();
+    this.errorDisplay = errorDisplay;
+    this.errorDisplay.moveToParent($('#popup'));
+    this.setCloseEvent();
+    const tilingDisplayDiv = Modal.transformFigure(nodeHTML);
+    const tilingDisplayParent = $('#popup-content');
+    this.tilingDisplay = new TilingDisplay(
+      tiling,
+      tilingDisplayDiv,
+      expanded,
+      (...args) => {
+        this.remove();
+        callback(...args);
+      },
+      tilingDisplayParent,
+    );
+  }
+
+  setCloseEvent() {
+    $('#popup').on('keydown', (evt) => {
+      if (evt.key === 'Escape') {
+        this.remove();
+      }
+    });
+    $('#modal-close').on('click', () => {
+      this.remove(false);
+    });
+  }
+
+  remove(toggle = true) {
+    if (toggle) this.modal.toggle();
+    this.errorDisplay.restoreParent();
+    $('#popup').remove();
+    // Bootstrap (or something) seems to add some trailing ";", remove that, TODO: Find a fix
+    document.body.lastChild.remove();
   }
 }
 

@@ -20,8 +20,16 @@ class Treant {
     return nNode;
   }
 
+  getNode(id) {
+    return this.tree.nodeDB.get(id);
+  }
+
   destroy() {
     TreeStore.destroy(this.tree.id);
+  }
+
+  getNodeCount() {
+    return this.tree.nodeDB.db.length;
   }
 }
 

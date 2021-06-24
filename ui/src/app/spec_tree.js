@@ -4,11 +4,12 @@ import './styles/spec_tree.scss';
 import Tiling from '../combinatorics/tiling';
 import Specification from '../combinatorics/specification';
 import Treant from '../treant/treant';
-import { randomRule } from '../consumers/service';
-import statusCode from '../consumers/status_codes';
 import Rule from '../combinatorics/rule';
 import Modal from './modal';
 
+/**
+ * A component for the specification tree.
+ */
 class SpecTree {
   /**
    * The div id of the SpecTree's container.
@@ -25,9 +26,11 @@ class SpecTree {
   /**
    * Raw HTML for a node that is added to Treant.
    */
-  static nodeHtml(tiling, label, nodeId) {
-    const verifiedClass = tiling.verified ? ' spec-node-verified' : '';
-    return `<div id="spec-node-${nodeId}" class="spec-node-container${verifiedClass}">
+  static nodeHtml(tiling, label, nodeId, duplicate = false) {
+    let additionalClasses = '';
+    if (tiling.verified) additionalClasses = ' spec-node-verified';
+    else if (duplicate) additionalClasses = ' spec-node-duplicate';
+    return `<div id="spec-node-${nodeId}" class="spec-node-container${additionalClasses}">
       <div class="spec-node-label">${label}</div>
       <div class="spec-node">
         <div class="spec-node-inner-content">
@@ -35,6 +38,13 @@ class SpecTree {
         </div>
       </div>
     </div>`;
+  }
+
+  /**
+   * Raw HTML for a rule node.
+   */
+  static ruleNodeHtml(op, nodeId) {
+    return `<div id="spec-node-${nodeId}" class="rule-node">${op}</div>`;
   }
 
   /**
@@ -65,80 +75,100 @@ class SpecTree {
     };
   }
 
-  constructor(parentSelector, initialTilingResponse) {
+  /**
+   * Create a specification tree component.
+   */
+  constructor(parentSelector, initialTilingResponse, errorDisplay) {
     parentSelector.append(SpecTree.getHTML());
     const root = new Tiling(initialTilingResponse);
+    this.errorDisplay = errorDisplay;
     this.spec = new Specification(root);
     this.treant = new Treant(SpecTree.initConfig(this.spec.root));
-    this.nodeToClass = [0];
-    this.classToNodes = [[0]];
+    this.nodeIdToClassId = [0];
+    this.classIdToNodeIds = [[0]];
 
-    $('#spec-node-0').on('click', () => {
-      const classId = this.nodeToClass[0];
-      const nodeHTML = this.treant.tree.nodeDB.get(classId).nodeInnerHTML;
+    this.setClickEventForNode(0);
+  }
+
+  /**
+   * Set click event for a new tiling node.
+   */
+  setClickEventForNode(nodeId) {
+    $(`#spec-node-${nodeId}`).on('click', () => {
+      const classId = this.nodeIdToClassId[nodeId];
+      const node = this.treant.getNode(nodeId);
       const tiling = this.spec.getClassById(classId);
-      const modal = new Modal(tiling, nodeHTML, false);
+      const expanded = this.spec.hasChildren(classId);
+      Modal.render(tiling, node.nodeInnerHTML, expanded, this.errorDisplay, (newRule) => {
+        this.extendNode(nodeId, newRule);
+      });
     });
   }
 
   /**
-   * Extend node with given id.
+   * Extend node with given id with given rule.
    */
-  async extendNode(id) {
-    const classId = this.nodeToClass[id];
-    if (this.spec.hasChildren(classId)) {
-      console.log('Already expanded (todo: handle in ui)');
-      return;
-    }
-    const tiling = this.spec.getClassById(classId);
-    if (tiling.verified) {
-      console.log('Already verified (todo: handle in ui)');
-      return;
-    }
-    const res = await randomRule(tiling.tilingJson);
-    if (res.status !== statusCode.OK) {
-      console.log('NOT OK ERROR: TODO handle');
-    } else {
-      this.addRule(id, new Rule(res.data));
-    }
+  async extendNode(nodeId, rule) {
+    this.addRule(nodeId, new Rule(rule));
   }
 
-  addRule(id, rule) {
-    const newClasses = this.spec.addRule(id, rule);
-    const children = this.spec.rules[id];
-    const nodeParents = this.classToNodes[id];
+  /**
+   * Add a rule and update spec.
+   */
+  addRule(nodeId, rule) {
+    // TODO: handle eq-rules
 
-    const newNodes = [];
+    const classId = this.nodeIdToClassId[nodeId];
+    const newClasses = this.spec.addRule(classId, rule);
+    const children = this.spec.getChildren(classId);
+    const nodeParents = this.classIdToNodeIds[classId];
+
+    // Color duplicates
     nodeParents.forEach((parentId) => {
-      const parent = this.treant.tree.nodeDB.get(parentId);
-      children.forEach((childId) => {
-        const nodeId = this.treant.tree.nodeDB.db.length;
-        this.treant.add(parent, {
-          innerHTML: SpecTree.nodeHtml(this.spec.getClassById(childId), nodeId, childId),
-          collapsable: false,
-          collapsed: false,
-        });
-        newNodes.push(nodeId);
-        this.nodeToClass.push(childId);
-        while (this.classToNodes.length <= childId) this.classToNodes.push([]);
-        this.classToNodes[childId].push(nodeId);
-      });
+      if (parentId !== nodeId) {
+        $(`#spec-node-${parentId}`).addClass('spec-node-duplicate');
+      }
     });
 
-    newNodes.forEach((nId) => {
-      $(`#spec-node-${nId}`).on('click', () => {
-        this.extendNode(nId);
+    // Add rule node
+    let parent = this.treant.getNode(nodeId);
+    let newNodeId = this.treant.getNodeCount();
+    parent = this.treant.add(parent, {
+      innerHTML: SpecTree.ruleNodeHtml(rule.op, newNodeId),
+      collapsable: false,
+      collapsed: false,
+    });
+    this.nodeIdToClassId.push(classId);
+
+    // Add child nodes
+    children.forEach((childId, idx) => {
+      newNodeId += 1;
+      const dup = !newClasses[idx];
+      this.treant.add(parent, {
+        innerHTML: SpecTree.nodeHtml(this.spec.getClassById(childId), childId + 1, newNodeId, dup),
+        collapsable: false,
+        collapsed: false,
       });
+      this.nodeIdToClassId.push(childId);
+      while (this.classIdToNodeIds.length <= childId) this.classIdToNodeIds.push([]);
+      this.classIdToNodeIds[childId].push(newNodeId);
+      this.setClickEventForNode(newNodeId);
     });
   }
 
   remove(removeDiv = true) {
+    /**
+     * Remove tree.
+     */
     this.treant.destroy();
     if (removeDiv) $(`#${SpecTree.divId}`).remove();
   }
 
   reset() {
-    if (this) console.log('reset todo...');
+    /**
+     * Remove everything but the root.
+     */
+    this.errorDisplay.alert('Not implemented');
   }
 }
 
