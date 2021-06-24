@@ -1,3 +1,5 @@
+from typing import Optional
+
 from flask import Blueprint, request
 from tilings.tiling import Tiling
 from werkzeug.exceptions import BadRequest
@@ -10,7 +12,9 @@ tiling_blueprint = Blueprint("tiling_blueprint", __name__, url_prefix="/api/tili
 @tiling_blueprint.route("/init", methods=["POST"])
 def tiling_from_basis() -> dict:
     """Get a root tiling."""
-    data: dict = request.get_json(silent=False)
+    data: Optional[dict] = request.get_json(silent=False)
+    if data is None:
+        raise BadRequest()
     try:
         if isinstance(data, str):
             print(data)
