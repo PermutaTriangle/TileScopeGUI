@@ -26,7 +26,7 @@ def _get_request_json() -> dict:
     return data
 
 
-def _first_or_bad(iterable: Iterable[ItType]) -> ItType:
+def _first_or_bad(iterable: Iterable["ItType"]) -> "ItType":
     for element in iterable:
         return element
     raise BadRequest()
