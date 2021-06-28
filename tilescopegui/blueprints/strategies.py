@@ -120,6 +120,11 @@ def cell_insertion() -> dict:
         rule = RequirementInsertionStrategy((gp,))(tiling)
     except StrategyDoesNotApply as exc:
         raise BadRequest() from exc
+    if all(
+        tiling == ne_child
+        for ne_child in filter(lambda t: not t.is_empty(), rule.children)
+    ):
+        raise BadRequest()
     return rule_as_json(rule)
 
 
