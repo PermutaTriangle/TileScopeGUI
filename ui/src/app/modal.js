@@ -1,11 +1,14 @@
-import './styles/modal.scss';
-
 import $ from 'jquery';
 import { Modal as BootstrapModal } from 'bootstrap';
 
+import { copyToClipboard } from './svgs';
 import TilingDisplay from './tiling_display';
 
+import './styles/modal.scss';
+
 class Modal {
+  static clipboardId = 'clipboardcopy';
+
   static getHTML() {
     return `<div
       class="modal"
@@ -17,7 +20,7 @@ class Modal {
       <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">TEMP TITLE (replace with btns)</h5>
+            ${copyToClipboard(Modal.clipboardId)}
             <button
               id="modal-close"
               type="button"
@@ -56,27 +59,42 @@ class Modal {
     return div;
   }
 
-  static render(tiling, nodeHTML, expanded, errorDisplay, callback) {
-    (() => new Modal(tiling, nodeHTML, expanded, errorDisplay, callback))();
+  static render(tiling, appState, nodeHTML, rule, errorDisplay, callback) {
+    (() => new Modal(tiling, appState, nodeHTML, rule, errorDisplay, callback))();
   }
 
-  constructor(tiling, nodeHTML, expanded, errorDisplay, callback) {
+  constructor(tiling, appState, nodeHTML, rule, errorDisplay, callback) {
     this.modal = Modal.createAndDisplayModalDom();
     this.errorDisplay = errorDisplay;
     this.errorDisplay.moveToParent($('#popup'));
     this.setCloseEvent();
+    Modal.setClipboardEvent(tiling.tilingJson);
     const tilingDisplayDiv = Modal.transformFigure(nodeHTML);
     const tilingDisplayParent = $('#popup-content');
     this.tilingDisplay = new TilingDisplay(
       tiling,
+      appState,
       tilingDisplayDiv,
-      expanded,
+      rule,
       (...args) => {
         this.remove();
         callback(...args);
       },
       tilingDisplayParent,
+      (msg) => {
+        this.errorDisplay.alert(msg);
+      },
     );
+  }
+
+  /**
+   * Set click event on clipboard icon to store tiling as json
+   * in user's clipboard.
+   */
+  static setClipboardEvent(tilingJson) {
+    $(`#${Modal.clipboardId}`).on('click', () => {
+      navigator.clipboard.writeText(JSON.stringify(tilingJson));
+    });
   }
 
   setCloseEvent() {

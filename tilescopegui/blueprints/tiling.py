@@ -22,4 +22,5 @@ def tiling_from_basis() -> dict:
             tiling = Tiling.from_dict(data)
     except (TypeError, KeyError, ValueError) as exc:
         raise BadRequest() from exc
+    print(tiling)
     return tiling_to_gui_json(tiling)

@@ -27,8 +27,10 @@ class ErrorDisplay {
   /**
    * Generate html for a single error message.
    */
-  static single(id, msg) {
-    return `<div id="${id}" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+  static single(id, msg, success = false) {
+    return `<div id="${id}" class="toast${
+      success ? ' toast-success' : ''
+    } align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
       <div class="toast-body">
       ${msg}
@@ -60,9 +62,9 @@ class ErrorDisplay {
   /**
    * Display error message.
    */
-  alert(msg) {
+  alert(msg, success = false) {
     const id = `toast-${uuid()}`;
-    this.container.append(ErrorDisplay.single(id, msg));
+    this.container.append(ErrorDisplay.single(id, msg, success));
     const selector = $(`#${id}`);
     const toast = new Toast(selector, ErrorDisplay.OPTIONS);
     toast.show();

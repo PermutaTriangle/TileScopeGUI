@@ -28,7 +28,7 @@ class SpecTree {
    */
   static nodeHtml(tiling, label, nodeId, duplicate = false) {
     let additionalClasses = '';
-    if (tiling.verified) additionalClasses = ' spec-node-verified';
+    if (tiling.isVerified()) additionalClasses = ' spec-node-verified';
     else if (duplicate) additionalClasses = ' spec-node-duplicate';
     return `<div id="spec-node-${nodeId}" class="spec-node-container${additionalClasses}">
       <div class="spec-node-label">${label}</div>
@@ -78,9 +78,12 @@ class SpecTree {
   /**
    * Create a specification tree component.
    */
-  constructor(parentSelector, initialTilingResponse, errorDisplay) {
+  constructor(parentSelector, initialTilingResponse, errorDisplay, appState) {
     parentSelector.append(SpecTree.getHTML());
     const root = new Tiling(initialTilingResponse);
+    this.unverifiedLeaves = new Set();
+    if (!root.isVerified()) this.unverifiedLeaves.add(root.key);
+    this.appState = appState;
     this.errorDisplay = errorDisplay;
     this.spec = new Specification(root);
     this.treant = new Treant(SpecTree.initConfig(this.spec.root));
@@ -98,10 +101,17 @@ class SpecTree {
       const classId = this.nodeIdToClassId[nodeId];
       const node = this.treant.getNode(nodeId);
       const tiling = this.spec.getClassById(classId);
-      const expanded = this.spec.hasChildren(classId);
-      Modal.render(tiling, node.nodeInnerHTML, expanded, this.errorDisplay, (newRule) => {
-        this.extendNode(nodeId, newRule);
-      });
+      const rule = this.spec.getRuleByLHS(classId);
+      Modal.render(
+        tiling,
+        this.appState,
+        node.nodeInnerHTML,
+        rule,
+        this.errorDisplay,
+        (newRule) => {
+          this.extendNode(nodeId, newRule);
+        },
+      );
     });
   }
 
@@ -123,6 +133,8 @@ class SpecTree {
     const children = this.spec.getChildren(classId);
     const nodeParents = this.classIdToNodeIds[classId];
 
+    this.unverifiedLeaves.delete(this.spec.getClassById(classId).key);
+
     // Color duplicates
     nodeParents.forEach((parentId) => {
       if (parentId !== nodeId) {
@@ -143,9 +155,11 @@ class SpecTree {
     // Add child nodes
     children.forEach((childId, idx) => {
       newNodeId += 1;
-      const dup = !newClasses[idx];
+      const dup = !newClasses[idx] && this.spec.hasChildren(childId);
+      const childTiling = this.spec.getClassById(childId);
+      if (!dup && !childTiling.isVerified()) this.unverifiedLeaves.add(childTiling.key);
       this.treant.add(parent, {
-        innerHTML: SpecTree.nodeHtml(this.spec.getClassById(childId), childId + 1, newNodeId, dup),
+        innerHTML: SpecTree.nodeHtml(childTiling, childId + 1, newNodeId, dup),
         collapsable: false,
         collapsed: false,
       });
@@ -154,6 +168,8 @@ class SpecTree {
       this.classIdToNodeIds[childId].push(newNodeId);
       this.setClickEventForNode(newNodeId);
     });
+
+    if (this.unverifiedLeaves.size === 0) this.errorDisplay.alert('Specification!', true);
   }
 
   remove(removeDiv = true) {

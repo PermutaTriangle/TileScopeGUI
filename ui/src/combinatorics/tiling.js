@@ -27,6 +27,10 @@ class Tiling {
     this.verified = jsonTiling.verified;
   }
 
+  isVerified() {
+    return this.verified && Object.keys(this.verified).length;
+  }
+
   /**
    * HTML table of tiling ascii plot.
    */

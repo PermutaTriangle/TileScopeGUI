@@ -4,6 +4,7 @@ import NavBar from './nav_bar';
 import TextInput from './text_input';
 import SpecTree from './spec_tree';
 import ErrorDisplay from './error_display';
+import AppState from './app_state';
 
 import './styles/app.scss';
 
@@ -15,6 +16,7 @@ class App {
    * Create an instance of the app.
    */
   constructor() {
+    this.appState = new AppState();
     this.appSelector = $('#app');
     this.navBar = new NavBar(this.appSelector);
     this.errorDisplay = new ErrorDisplay(this.appSelector);
@@ -69,7 +71,7 @@ class App {
    * Process input event.
    */
   async startTree(data) {
-    this.specTree = new SpecTree(this.appSelector, data, this.errorDisplay);
+    this.specTree = new SpecTree(this.appSelector, data, this.errorDisplay, this.appState);
     this.textInput.remove();
     this.textInput = null;
   }

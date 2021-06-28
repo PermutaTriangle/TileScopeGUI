@@ -1,0 +1,28 @@
+.cell-hoverable .non-empty-cell {
+  -webkit-transition: background-color 0.25s ease-in-out;
+  -moz-transition: background-color 0.25s ease-out;
+  -o-transition: background-color 0.25s ease-out;
+  transition: background-color 0.25s ease-out;
+}
+
+.cell-hoverable .non-empty-cell:hover {
+  background-color: lightblue;
+  cursor: pointer;
+}
+
+#rcp-display table:focus {
+  cursor: default;
+  outline: none;
+}
+
+.rcp-togglable > svg {
+  cursor: pointer;
+  -webkit-transition: background-color 0.35s ease-in-out;
+  -moz-transition: background-color 0.35s ease-out;
+  -o-transition: background-color 0.35s ease-out;
+  transition: background-color 0.35s ease-out;
+}
+
+.rcp-toggled > svg {
+  background-color: cadetblue;
+}
