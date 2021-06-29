@@ -1,3 +1,1 @@
-cd ui
-npm run-script build
-cd ..
+npm run build --prefix ui

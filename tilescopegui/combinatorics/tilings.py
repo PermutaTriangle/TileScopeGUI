@@ -63,8 +63,8 @@ class Labeller:
         ]
         self.labels_to_basis: Dict[str, str] = {}
         self.crossing_obs: List[str] = []
-        self.requirements: List[str] = []
-        self.assumptions: List[str] = []
+        self.requirements: List[List[str]] = []
+        self.assumptions: List[List[str]] = []
 
     def _get_label(self, basis: List[Perm], positive: bool) -> str:
         key = (tuple(basis), positive)
@@ -77,16 +77,22 @@ class Labeller:
 
     def find_symbols(self) -> None:
         """Find symbols for a tiling."""
+        if self.tiling.is_epsilon():
+            self.img[0][0] = "ε"
+            return
         blacklist = set(Labeller._INIT_CACHE.values())
         for cell, (obstructions, _) in sorted(self.tiling.cell_basis().items()):
             positive = cell in self.tiling.positive_cells
             label = self._get_label(sorted(obstructions), positive)
             self.img[self.rows - cell[1] - 1][cell[0]] = label
             if label not in blacklist:
-                self.labels_to_basis[label] = (
-                    f"Av{'+' if positive else ''}"
-                    f"({', '.join(str(gp) for gp in obstructions)})"
+                bases = ", ".join(
+                    "".join(str(val + 1) for val in perm) for perm in obstructions
                 )
+                if positive:
+                    self.labels_to_basis[label] = f"Av+({bases})"
+                else:
+                    self.labels_to_basis[label] = f"Av({bases})"
         if Labeller._EMPTY_STR in self.labels_to_basis:
             del self.labels_to_basis[Labeller._EMPTY_STR]
 
@@ -99,12 +105,12 @@ class Labeller:
     def find_requirements(self) -> None:
         """Find requirements for a tiling."""
         for reqs in self.tiling.requirements:
-            self.requirements.append(", ".join(str(req) for req in reqs))
+            self.requirements.append(list(str(req) for req in reqs))
 
     def find_assumptions(self) -> None:
         """Find assumptions for a tiling."""
-        for assumption in enumerate(self.tiling.assumptions):
-            self.assumptions.append(str(assumption))
+        for assumption in self.tiling.assumptions:
+            self.assumptions.append(list(str(gp) for gp in assumption.gps))
 
 
 def tiling_to_gui_json(tiling: Tiling) -> dict:
@@ -115,3 +121,5 @@ def tiling_to_gui_json(tiling: Tiling) -> dict:
         "key": base64.b64encode(tiling.to_bytes()).decode("utf-8"),
         "verified": verify_to_json(tiling),
     }
+    # TODO: Stop sending reqs, assumptions and obstructions in plot and make js
+    # process those from the json

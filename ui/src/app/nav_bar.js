@@ -2,11 +2,16 @@ import $ from 'jquery';
 
 import './styles/nav_bar.scss';
 
+/**
+ * Nav bar component.
+ */
 class NavBar {
+  /**
+   * Raw html for navigation bar.
+   *
+   * @returns {string} raw HTML string
+   */
   static getHTML() {
-    /**
-     * Raw html for navigation bar.
-     */
     return `<div class="topnav">
       <a id="nav-home">Home</a>
       <a id="nav-reset">Reset</a>
@@ -15,54 +20,68 @@ class NavBar {
     </div>`;
   }
 
+  /**
+   * Create a navigation bar. This will generate the HTML and add to parent.
+   *
+   * @param {JQuery} domParent
+   */
   constructor(domParent) {
-    /**
-     * Create a navigation bar. This will generate the HTML and add to parent.
-     */
     domParent.prepend(NavBar.getHTML());
+    /** @type {JQuery} */
     this.home = $('#nav-home');
+    /** @type {JQuery} */
     this.reset = $('#nav-reset');
+    /** @type {JQuery} */
     this.export = $('#nav-export');
+    /** @type {JQuery} */
     this.import = $('#nav-import');
   }
 
+  /**
+   * Set click event for home.
+   *
+   * @param {() => void} callback
+   */
   setHomeEvent(callback) {
-    /**
-     * Set click event for home.
-     */
     this.home.off('click');
-    this.home.on('click', (evt) => {
-      callback(evt);
+    this.home.on('click', () => {
+      callback();
     });
   }
 
+  /**
+   * Set click event for reset.
+   *
+   * @param {() => void} callback
+   */
   setResetEvent(callback) {
-    /**
-     * Set click event for reset.
-     */
     this.reset.off('click');
-    this.reset.on('click', (evt) => {
-      callback(evt);
+    this.reset.on('click', () => {
+      callback();
     });
   }
 
+  /**
+   * Set click event for export.
+   *
+   * @param {() => void} callback
+   */
   setExportEvent(callback) {
-    /**
-     * Set click event for export.
-     */
     this.export.off('click');
-    this.export.on('click', (evt) => {
-      callback(evt);
+    this.export.on('click', () => {
+      callback();
     });
   }
 
+  /**
+   * Set click event for import.
+   *
+   * @param {() => void} callback
+   */
   setImportEvent(callback) {
-    /**
-     * Set click event for import.
-     */
     this.import.off('click');
-    this.import.on('click', (evt) => {
-      callback(evt);
+    this.import.on('click', () => {
+      callback();
     });
   }
 }

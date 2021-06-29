@@ -3,6 +3,7 @@ import { isStr, isObj } from '../utils/utils';
 import Tiling from '../combinatorics/tiling';
 import { getTiling } from '../consumers/service';
 import statusCode from '../consumers/status_codes';
+import '../utils/typedefs';
 
 import './styles/text_input.scss';
 
@@ -12,6 +13,8 @@ import './styles/text_input.scss';
 class TextInput {
   /**
    * Get raw HTML for text input.
+   *
+   * @returns {string} raw HTML string
    */
   static getHTML() {
     // Modified version of https://codepen.io/lucasyem/pen/ZEEYKdj
@@ -25,11 +28,23 @@ class TextInput {
 
   static inputFailureMessage = 'Invalid input';
 
+  /**
+   * Convert failure status code to error message.
+   *
+   * @param {number} status
+   * @returns {string} error message
+   */
   static statusToMessage(status) {
     if (status < 0) return TextInput.requestFailureMessage;
     return TextInput.inputFailureMessage;
   }
 
+  /**
+   * Check if tiling json is valid.
+   *
+   * @param {object} obj
+   * @returns {boolean} true if object contains needed fields
+   */
   static validTilingJsonInput(obj) {
     return (
       'class_module' in obj &&
@@ -42,16 +57,25 @@ class TextInput {
 
   /**
    * Create a text input bar. This will generate the HTML and add to parent.
+   *
+   * @constructor
+   * @param {JQuery} parentSelector
+   * @param {(msg: string) => void} errorMsg
+   * @param {(data: TilingResponse) => void} callback
    */
   constructor(parentSelector, errorMsg, callback) {
     parentSelector.append(TextInput.getHTML());
+    /** @type {JQuery} */
     this.selector = $('.basis-input');
+    /** @type {(data: TilingResponse) => void} */
     this.callback = callback;
     this.setEvents(errorMsg);
   }
 
   /**
    * Set events for input field.
+   *
+   * @param {(msg: string) => void} errorMsg
    */
   setEvents(errorMsg) {
     // Process on enter
@@ -81,6 +105,9 @@ class TextInput {
 
   /**
    * Validate and sanitize input.
+   *
+   * @param {any} value
+   * @returns {any[]} A tuple of [value, error]
    */
   static sanitizeInput(value) {
     const err = [null, true];
@@ -106,6 +133,9 @@ class TextInput {
 
   /**
    * Parse input data.
+   *
+   * @param {string} value
+   * @returns {any} jsonified input
    */
   static processInput(value) {
     const trimmed = value.trim();

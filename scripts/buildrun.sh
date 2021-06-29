@@ -1,6 +1,4 @@
 #!/bin/bash
 
-cd ui
-npm run-script build
-cd ..
+npm run build --prefix ui
 python3 -m tilescopegui.main

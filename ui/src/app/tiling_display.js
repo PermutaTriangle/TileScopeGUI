@@ -1,164 +1,244 @@
 import $ from 'jquery';
+
+import StrategyDisplay from './strategy_display';
+import { divWrap, accordionItem, bsLI, bsULFlush } from '../utils/dom_utils';
+
+import '../utils/typedefs';
+
 import './styles/tiling_display.scss';
 
-import { rowCol, factor } from '../consumers/service';
-
+/**
+ * A component to display a tiling.
+ */
 class TilingDisplay {
-  constructor(tiling, plotDiv, expanded, callback, parentDom) {
+  /**
+   * Convert a GP to a one based with superscript.
+   *
+   * @param {string} gp
+   * @returns {string} one based gp with superscript for positions
+   */
+  static fancyGP(gp) {
+    if (gp[0] === 'ε') return 'ε';
+    const [patt, pos] = gp.split(': ');
+    const pattArr = patt.split('').map((x) => +x + 1);
+    const posArr = [...pos.match(/\([0-9]+, [0-9]+\)/g)];
+    let last = '';
+    const arr = Array(pattArr.length);
+    for (let i = arr.length - 1; i >= 0; i -= 1) {
+      if (posArr[i] === last) {
+        arr[i] = pattArr[i];
+      } else {
+        arr[i] = `${pattArr[i]}<sup>${posArr[i]}</sup>`;
+      }
+      last = posArr[i];
+    }
+    return arr.join('');
+  }
+
+  /**
+   * Create tiling display component.
+   *
+   * @constructor
+   * @param {TilingInterface} tiling
+   * @param {AppStateInterface} appState
+   * @param {HTMLDivElement} plotDiv
+   * @param {null|RuleWithoutTilings} rule
+   * @param {(newRule: RuleResponse) => void} callback
+   * @param {JQuery} parentDom
+   * @param {(msg: string) => void} errorMsg
+   */
+  constructor(tiling, appState, plotDiv, rule, callback, parentDom, errorMsg) {
+    /** @type {TilingInterface} */
     this.tiling = tiling;
+    /** @type {AppStateInterface} */
+    this.appState = appState;
+    /** @type {HTMLDivElement} */
     this.plotDiv = plotDiv;
-    this.expanded = expanded || (tiling.verified && Object.keys(tiling.verified).length);
+    /** @type {null|RuleWithoutTilings} */
+    this.rule = rule;
+    /** @type {(newRule: RuleResponse) => void} */
     this.callback = callback;
+    /** @type {JQuery} */
     this.parentDom = parentDom;
+    /** @type {(msg: string) => void} */
+    this.errorMsg = errorMsg;
     this.plot();
   }
 
+  /**
+   * Have we already expanded this tiling?
+   *
+   * @returns {bolean} true if tilings is not on LHS on rule
+   */
+  isExpandable() {
+    return this.rule === null;
+  }
+
+  /**
+   * Is this tiling verified?
+   *
+   * @returns {boolean} true if tiling is verified
+   */
+  isVerified() {
+    return this.tiling.isVerified();
+  }
+
+  /**
+   * Add component to dom.
+   */
   plot() {
     this.addTopFigure();
-    this.addClipboardButtons();
+    const rOrV = this.ruleOrVerification();
     this.parentDom.append(`<div class="accordion" id="accordionPanelsStayOpenExample">
-      ${this.cellBasesDiv()}
-      ${this.crossingDiv()}
-      ${this.requirementsDiv()}
-      ${this.assumptionsDiv()}
+      ${this.tilingInfo()}
+      ${rOrV}
     </div>`);
-    this.addVerifies();
-    this.addStrategies();
+    if (!rOrV) this.expansionsStrats();
   }
 
+  /**
+   * Add tiling's ascii figure to dom.
+   */
   addTopFigure() {
-    const container = document.createElement('div');
-    container.id = 'top-modal-figure';
-    // container.classList.add('d-flex p-2');
-    container.append(this.plotDiv);
-    this.parentDom.append(container);
+    const div = divWrap('top-modal-figure', this.plotDiv);
+    this.parentDom.append(div);
   }
 
-  addClipboardButtons() {
-    this.parentDom.append('<Button id="copy-json">JSON</Button>');
-    this.parentDom.append('<Button id="copy-repl">REPL</Button>');
-
-    $('#copy-json').on('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(this.tiling.tilingJson));
-    });
-    $('#copy-repl').on('click', () => {
-      console.log('TODO: Implement');
-    });
+  /**
+   * Construct elements for displaying information about tiling.
+   *
+   * @returns {string} raw HTML string
+   */
+  tilingInfo() {
+    const items = [];
+    if (this.tiling.plot.label_map && Object.keys(this.tiling.plot.label_map).length) {
+      items.push(this.cellBasesDiv());
+    }
+    if (this.tiling.plot.crossing?.length) {
+      items.push(this.crossingDiv());
+    }
+    if (this.tiling.plot.requirements?.length) {
+      items.push(this.requirementsDiv());
+    }
+    if (this.tiling.plot.assumptions?.length) {
+      items.push(this.assumptionsDiv());
+    }
+    return items.join('');
   }
 
+  /**
+   * If tiling is verified or has been expanded,
+   * return the appropriate info. Otherwise the
+   * empty string is returned.
+   *
+   * @returns {string} raw HTML string or nothing if we can expand
+   */
+  ruleOrVerification() {
+    if (this.isVerified()) {
+      return this.verification();
+    }
+    if (!this.isExpandable()) {
+      return this.ruleForTiling();
+    }
+    return '';
+  }
+
+  /**
+   * A list of cell bases.
+   *
+   * @returns {string} raw HTML string.
+   */
   cellBasesDiv() {
-    if (!this.tiling.plot.label_map || !Object.keys(this.tiling.plot.label_map).length) {
-      return '';
-    }
-    return `<div class="accordion-item">
-      <h2 class="accordion-header" id="panelsStayOpen-headingOne">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
-          Cell bases
-        </button>
-      </h2>
-      <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
-        <div class="accordion-body">
-          <ul>
-            ${Object.entries(this.tiling.plot.label_map)
-              .map(([key, value]) => `<li>${key}: ${value}</li>`)
-              .join('')}
-          </ul>
-        </div>
-      </div>
-    </div>`;
+    return accordionItem(
+      1,
+      'Cell bases',
+      bsULFlush(
+        Object.entries(this.tiling.plot.label_map)
+          .map(([key, value]) => bsLI(`${key}: ${value}`))
+          .join(''),
+      ),
+    );
   }
 
+  /**
+   * A list of crossing obstructions.
+   *
+   * @returns {string} raw HTML string.
+   */
   crossingDiv() {
-    if (!this.tiling.plot.crossing?.length) return '';
-    return `<div class="accordion-item">
-      <h2 class="accordion-header" id="panelsStayOpen-headingTwo">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
-          Crossing obstructions
-        </button>
-      </h2>
-      <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
-        <div class="accordion-body">
-          <ol>${this.tiling.plot.crossing.map((v) => `<li>${v}</li>`).join('')}</ol>
-        </div>
-      </div>
-    </div>`;
+    return accordionItem(
+      2,
+      'Crossing obstructions',
+      bsULFlush(this.tiling.plot.crossing.map((v) => bsLI(TilingDisplay.fancyGP(v))).join('')),
+    );
   }
 
+  /**
+   * A list of requirements.
+   *
+   * @returns {string} raw HTML string.
+   */
   requirementsDiv() {
-    if (!this.tiling.plot.requirements?.length) return '';
-    return `<div class="accordion-item">
-      <h2 class="accordion-header" id="panelsStayOpen-headingThree">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
-          Requirements
-        </button>
-      </h2>
-      <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree">
-        <div class="accordion-body">
-          <ol>${this.tiling.plot.requirements.map((v) => `<li>${v}</li>`).join('')}</ol>
-        </div>
-      </div>
-    </div>`;
+    return accordionItem(
+      3,
+      'Requirements',
+      bsULFlush(
+        this.tiling.plot.requirements
+          .map((v) => bsLI(v.map((x) => TilingDisplay.fancyGP(x)).join('<br>')))
+          .join(''),
+      ),
+    );
   }
 
+  /**
+   * A list of assumptions.
+   *
+   * @returns {string} raw HTML string.
+   */
   assumptionsDiv() {
-    if (!this.tiling.plot.assumptions?.length) return '';
-    return `<div class="accordion-item">
-      <h2 class="accordion-header" id="panelsStayOpen-headingFour">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseFour" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
-          Assumption
-        </button>
-      </h2>
-      <div id="panelsStayOpen-collapseFour" class="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingFour">
-        <div class="accordion-body">
-          <ol>${this.tiling.plot.assumptions.map((v) => `<li>${v}</li>`).join('')}</ol>
-        </div>
-      </div>
-    </div>`;
+    return accordionItem(
+      4,
+      'Assumption',
+      bsULFlush(
+        this.tiling.plot.assumptions
+          .map((v) => bsLI(v.map((x) => TilingDisplay.fancyGP(x)).join('<br>')))
+          .join(''),
+      ),
+    );
   }
 
-  addVerifies() {
-    if (this.tiling.verified && Object.keys(this.tiling.verified).length) {
-      this.parentDom.append('<p>Verified</p>');
-      this.parentDom.append(this.tiling.verified.formal_step);
-    }
+  /**
+   * How the tiling is verified.
+   *
+   * @returns {string} raw HTML string.
+   */
+  verification() {
+    return accordionItem(5, 'Verified', `<div>${this.tiling.verified.formal_step}</div>`);
   }
 
-  addStrategies() {
-    if (!this.expanded) {
-      // Temp to test...
-      this.parentDom.append('<h6>Strategies</h6><p>TODO</p>');
-      this.parentDom.append('<Button id="btn-fac">Factor</Button>');
-      this.parentDom.append('<Button id="btn-rc0">RC EAST</Button>');
-      this.parentDom.append('<Button id="btn-rc1">RC NORTH</Button>');
-      this.parentDom.append('<Button id="btn-rc2">RC WEST</Button>');
-      this.parentDom.append('<Button id="btn-rc3">RC SOUTH</Button>');
-      $('#btn-fac').on('click', async () => {
-        const res = await factor(this.tiling.tilingJson);
-        if (res.status === 200) {
-          this.callback(res.data);
-        } else {
-          console.log('error');
-          console.log(res);
-        }
-      });
-      $('#btn-rc1').on('click', async () => {
-        const res = await rowCol(this.tiling.tilingJson, 1);
-        if (res.status === 200) {
-          this.callback(res.data);
-        } else {
-          console.log('error');
-          console.log(res);
-        }
-      });
-    }
+  /**
+   * Add an interface for expansions.
+   */
+  expansionsStrats() {
+    const strat = new StrategyDisplay(
+      this.tiling,
+      this.appState,
+      this.plotDiv,
+      this.callback,
+      $('.accordion'),
+      this.errorMsg,
+    );
+    strat.plot();
+  }
+
+  /**
+   * The rule that the tilings is on the left hand side of.
+   *
+   * @returns {string} raw HTML string.
+   */
+  ruleForTiling() {
+    return accordionItem(5, 'Rule', `<div>${this.rule.formalStep}</div>`);
   }
 }
 
 export default TilingDisplay;
-
-/**
-  HOW TO EXTRACT COORDS $('#top-modal-figure .non-empty-cell').on('click', (evt) => {
-  const pattern = /matrix_([\d+])_([\d+])/gm;
-  const [, x, y] = pattern.exec(evt.target.className);
-});
-*/
