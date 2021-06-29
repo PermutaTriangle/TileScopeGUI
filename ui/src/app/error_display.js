@@ -26,6 +26,11 @@ class ErrorDisplay {
 
   /**
    * Generate html for a single error message.
+   *
+   * @param {string} id
+   * @param {string} msg
+   * @param {boolean} [success] defaults to false
+   * @returns {string} raw HTML string
    */
   static single(id, msg, success = false) {
     return `<div id="${id}" class="toast${
@@ -42,6 +47,8 @@ class ErrorDisplay {
 
   /**
    * Get html for the error container.
+   *
+   * @returns {string} raw HTML string
    */
   static getHTML() {
     return `<div id="error-msg" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
@@ -52,15 +59,23 @@ class ErrorDisplay {
 
   /**
    * Create a error message component.
+   *
+   * @constructor
+   * @param {JQuery} parentDom
    */
   constructor(parentDom) {
+    /** @type {JQuery} */
     this.parent = parentDom;
     parentDom.append(ErrorDisplay.getHTML());
+    /** @type {JQuery} */
     this.container = $('.toast-container');
   }
 
   /**
    * Display error message.
+   *
+   * @param {string} msg
+   * @param {boolean} [success] defaults to false
    */
   alert(msg, success = false) {
     const id = `toast-${uuid()}`;
@@ -76,14 +91,25 @@ class ErrorDisplay {
     }, ErrorDisplay.TIMEOUT);
   }
 
+  /**
+   * Alert not implemented.
+   */
   notImplemented() {
     this.alert('Not implemented');
   }
 
+  /**
+   * Temporary move error display under another parent.
+   *
+   * @param {JQuery} newParent
+   */
   moveToParent(newParent) {
     this.container.parent().detach().appendTo(newParent);
   }
 
+  /**
+   * Restore error display to the original parent.
+   */
   restoreParent() {
     this.container.parent().detach().appendTo(this.parent);
   }

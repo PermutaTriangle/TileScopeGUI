@@ -1,5 +1,10 @@
 /**
  * A clipboard copy icon.
+ *
+ * @param {string|null} [id] defaults to null
+ * @param {number} [w] defaults to 16
+ * @param {number} [h] defaults to 16
+ * @returns {string} raw HTML string
  */
 const copyToClipboard = (id = null, w = 16, h = 16) => {
   // From https://icons.getbootstrap.com/icons/clipboard/
@@ -12,6 +17,12 @@ const copyToClipboard = (id = null, w = 16, h = 16) => {
 
 /**
  * A boxed arrow.
+ *
+ * @param {string|null} id
+ * @param {number} rotation
+ * @param {number} w
+ * @param {number} h
+ * @returns {string} raw HTML string
  */
 const boxedArrow = (id, rotation, w, h) => {
   const htmlIdentifier = id === null ? '' : `id="${id}" `;
@@ -24,21 +35,41 @@ const boxedArrow = (id, rotation, w, h) => {
 
 /**
  * A boxed arrow facing left.
+ *
+ * @param {string|null} [id] defaults to null
+ * @param {number} [w] defaults to 16
+ * @param {number} [h] defaults to 16
+ * @returns {string} raw HTML string
  */
 const boxedArrowW = (id = null, w = 16, h = 16) => boxedArrow(id, 0, w, h);
 
 /**
  * A boxed arrow facing up.
+ *
+ * @param {string|null} [id] defaults to null
+ * @param {number} [w] defaults to 16
+ * @param {number} [h] defaults to 16
+ * @returns {string} raw HTML string
  */
 const boxedArrowN = (id = null, w = 16, h = 16) => boxedArrow(id, 90, w, h);
 
 /**
  * A boxed arrow facing right.
+ *
+ * @param {string|null} [id] defaults to null
+ * @param {number} [w] defaults to 16
+ * @param {number} [h] defaults to 16
+ * @returns {string} raw HTML string
  */
 const boxedArrowE = (id = null, w = 16, h = 16) => boxedArrow(id, 180, w, h);
 
 /**
  * A boxed arrow facing down.
+ *
+ * @param {string|null} [id] defaults to null
+ * @param {number} [w] defaults to 16
+ * @param {number} [h] defaults to 16
+ * @returns {string} raw HTML string
  */
 const boxedArrowS = (id = null, w = 16, h = 16) => boxedArrow(id, 270, w, h);
 

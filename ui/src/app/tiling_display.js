@@ -3,11 +3,19 @@ import $ from 'jquery';
 import StrategyDisplay from './strategy_display';
 import { divWrap, accordionItem, bsLI, bsULFlush } from '../utils/dom_utils';
 
+import '../utils/typedefs';
+
 import './styles/tiling_display.scss';
 
+/**
+ * A component to display a tiling.
+ */
 class TilingDisplay {
   /**
    * Convert a GP to a one based with superscript.
+   *
+   * @param {string} gp
+   * @returns {string} one based gp with superscript for positions
    */
   static fancyGP(gp) {
     if (gp[0] === 'ε') return 'ε';
@@ -28,21 +36,39 @@ class TilingDisplay {
   }
 
   /**
-   * Component to display tiling.
+   * Create tiling display component.
+   *
+   * @constructor
+   * @param {TilingInterface} tiling
+   * @param {AppStateInterface} appState
+   * @param {HTMLDivElement} plotDiv
+   * @param {null|RuleWithoutTilings} rule
+   * @param {(newRule: RuleResponse) => void} callback
+   * @param {JQuery} parentDom
+   * @param {(msg: string) => void} errorMsg
    */
   constructor(tiling, appState, plotDiv, rule, callback, parentDom, errorMsg) {
+    /** @type {TilingInterface} */
     this.tiling = tiling;
+    /** @type {AppStateInterface} */
     this.appState = appState;
+    /** @type {HTMLDivElement} */
     this.plotDiv = plotDiv;
+    /** @type {null|RuleWithoutTilings} */
     this.rule = rule;
+    /** @type {(newRule: RuleResponse) => void} */
     this.callback = callback;
+    /** @type {JQuery} */
     this.parentDom = parentDom;
+    /** @type {(msg: string) => void} */
     this.errorMsg = errorMsg;
     this.plot();
   }
 
   /**
    * Have we already expanded this tiling?
+   *
+   * @returns {bolean} true if tilings is not on LHS on rule
    */
   isExpandable() {
     return this.rule === null;
@@ -50,6 +76,8 @@ class TilingDisplay {
 
   /**
    * Is this tiling verified?
+   *
+   * @returns {boolean} true if tiling is verified
    */
   isVerified() {
     return this.tiling.isVerified();
@@ -78,6 +106,8 @@ class TilingDisplay {
 
   /**
    * Construct elements for displaying information about tiling.
+   *
+   * @returns {string} raw HTML string
    */
   tilingInfo() {
     const items = [];
@@ -100,6 +130,8 @@ class TilingDisplay {
    * If tiling is verified or has been expanded,
    * return the appropriate info. Otherwise the
    * empty string is returned.
+   *
+   * @returns {string} raw HTML string or nothing if we can expand
    */
   ruleOrVerification() {
     if (this.isVerified()) {
@@ -113,6 +145,8 @@ class TilingDisplay {
 
   /**
    * A list of cell bases.
+   *
+   * @returns {string} raw HTML string.
    */
   cellBasesDiv() {
     return accordionItem(
@@ -128,6 +162,8 @@ class TilingDisplay {
 
   /**
    * A list of crossing obstructions.
+   *
+   * @returns {string} raw HTML string.
    */
   crossingDiv() {
     return accordionItem(
@@ -139,6 +175,8 @@ class TilingDisplay {
 
   /**
    * A list of requirements.
+   *
+   * @returns {string} raw HTML string.
    */
   requirementsDiv() {
     return accordionItem(
@@ -154,6 +192,8 @@ class TilingDisplay {
 
   /**
    * A list of assumptions.
+   *
+   * @returns {string} raw HTML string.
    */
   assumptionsDiv() {
     return accordionItem(
@@ -169,13 +209,15 @@ class TilingDisplay {
 
   /**
    * How the tiling is verified.
+   *
+   * @returns {string} raw HTML string.
    */
   verification() {
     return accordionItem(5, 'Verified', `<div>${this.tiling.verified.formal_step}</div>`);
   }
 
   /**
-   * An interface for expansions.
+   * Add an interface for expansions.
    */
   expansionsStrats() {
     const strat = new StrategyDisplay(
@@ -191,6 +233,8 @@ class TilingDisplay {
 
   /**
    * The rule that the tilings is on the left hand side of.
+   *
+   * @returns {string} raw HTML string.
    */
   ruleForTiling() {
     return accordionItem(5, 'Rule', `<div>${this.rule.formalStep}</div>`);

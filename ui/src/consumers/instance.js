@@ -18,14 +18,24 @@ const apiConsumer = axios.create({
 
 /**
  * Convert errors to response.
+ *
+ * @param {Error} err
+ * @returns {{status: number, data: null}} Exceptions as response object.
  */
-const errorToResponse = (error) => {
-  if (error.response) return error.response;
-  return { status: -1 };
+const errorToResponse = (err) => {
+  if (err.response) {
+    return { status: err.response.status, data: null };
+  }
+  return { status: -1, data: null };
 };
 
 /**
  * Get request to API.
+ *
+ * @async
+ * @param {string} path
+ * @param {null|object} config
+ * @returns {Promise.<{status: number, data: object|null}>}
  */
 const apiGet = async (path, config = null) => {
   try {
@@ -38,6 +48,12 @@ const apiGet = async (path, config = null) => {
 
 /**
  * Post request to API.
+ *
+ * @async
+ * @param {string} path
+ * @param {object} data
+ * @param {null|object} config
+ * @returns {Promise.<{status: number, data: object|null}>}
  */
 const apiPost = async (path, data, config = null) => {
   try {

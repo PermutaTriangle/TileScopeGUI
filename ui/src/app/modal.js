@@ -4,11 +4,21 @@ import { Modal as BootstrapModal } from 'bootstrap';
 import { copyToClipboard } from './svgs';
 import TilingDisplay from './tiling_display';
 
+import '../utils/typedefs';
+
 import './styles/modal.scss';
 
+/**
+ * A modal component that takes over display.
+ */
 class Modal {
   static clipboardId = 'clipboardcopy';
 
+  /**
+   * Create base modal component in html.
+   *
+   * @returns {string} raw HTML string
+   */
   static getHTML() {
     return `<div
       class="modal"
@@ -35,6 +45,11 @@ class Modal {
     </div>;`;
   }
 
+  /**
+   * Create an instance of BS modal.
+   *
+   * @returns {BootstrapModal} a BS modal object
+   */
   static createAndDisplayModalDom() {
     $('body').append(Modal.getHTML());
     const modal = new BootstrapModal(document.getElementById('popup'), { keyboard: false });
@@ -42,6 +57,13 @@ class Modal {
     return modal;
   }
 
+  /**
+   * Grab html plot from treant node and create a copy of the
+   * inner most div possible that contains the image.
+   *
+   * @param {string} nodeHTML
+   * @returns {HTMLDivElement} a div element of tiling drawing
+   */
   static transformFigure(nodeHTML) {
     const phantom = document.createElement('div');
     phantom.innerHTML = nodeHTML;
@@ -59,26 +81,50 @@ class Modal {
     return div;
   }
 
+  /**
+   * Display modal.
+   *
+   * @param {TilingInterface} tiling
+   * @param {AppStateInterface} appState
+   * @param {string} nodeHTML
+   * @param {null|RuleWithoutTilings} rule
+   * @param {ErrorDisplayInterface} errorDisplay
+   * @param {(newRule: RuleResponse) => void} callback
+   */
   static render(tiling, appState, nodeHTML, rule, errorDisplay, callback) {
     (() => new Modal(tiling, appState, nodeHTML, rule, errorDisplay, callback))();
   }
 
+  /**
+   * Create modal component.
+   *
+   * @constructor
+   * @param {TilingInterface} tiling
+   * @param {AppStateInterface} appState
+   * @param {string} nodeHTML
+   * @param {null|RuleWithoutTilings} rule
+   * @param {ErrorDisplayInterface} errorDisplay
+   * @param {(newRule: RuleResponse) => void} callback
+   */
   constructor(tiling, appState, nodeHTML, rule, errorDisplay, callback) {
+    /** @type {BootstrapModal} */
     this.modal = Modal.createAndDisplayModalDom();
+    /** @type {ErrorDisplayInterface} */
     this.errorDisplay = errorDisplay;
     this.errorDisplay.moveToParent($('#popup'));
     this.setCloseEvent();
     Modal.setClipboardEvent(tiling.tilingJson);
     const tilingDisplayDiv = Modal.transformFigure(nodeHTML);
     const tilingDisplayParent = $('#popup-content');
+    /** @type {TilingDisplay} */
     this.tilingDisplay = new TilingDisplay(
       tiling,
       appState,
       tilingDisplayDiv,
       rule,
-      (...args) => {
+      (newRule) => {
         this.remove();
-        callback(...args);
+        callback(newRule);
       },
       tilingDisplayParent,
       (msg) => {
@@ -90,6 +136,8 @@ class Modal {
   /**
    * Set click event on clipboard icon to store tiling as json
    * in user's clipboard.
+   *
+   * @param {TilingJson} tilingJson
    */
   static setClipboardEvent(tilingJson) {
     $(`#${Modal.clipboardId}`).on('click', () => {
@@ -97,6 +145,9 @@ class Modal {
     });
   }
 
+  /**
+   * Set close modal event handlers.
+   */
   setCloseEvent() {
     $('#popup').on('keydown', (evt) => {
       if (evt.key === 'Escape') {
@@ -108,6 +159,11 @@ class Modal {
     });
   }
 
+  /**
+   * Hide and destroy the modal.
+   *
+   * @param {boolean} [toggle] defaults to true
+   */
   remove(toggle = true) {
     if (toggle) this.modal.toggle();
     this.errorDisplay.restoreParent();

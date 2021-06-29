@@ -7,24 +7,57 @@ import { accordionItem } from '../utils/dom_utils';
 import { boxedArrowN, boxedArrowW, boxedArrowS, boxedArrowE } from './svgs';
 import { directionStringToNumber } from '../utils/permuta_utils';
 
+import '../utils/typedefs';
+
 import './styles/strategy_display.scss';
 
+/**
+ * A component for displaying expansion strategies.
+ */
 class StrategyDisplay {
+  /**
+   * Extract coordinates from class name.
+   *
+   * @param {string} className
+   * @returns {number[]} pair of coordinates
+   */
   static getCoordsFromCellClickEvent(className) {
     const pattern = /matrix_([\d+])_([\d+])/gm;
     const [, x, y] = pattern.exec(className);
     return [+x, +y];
   }
 
+  /**
+   * Create strategy display component.
+   *
+   * @constructor
+   * @param {TilingInterface} tiling
+   * @param {AppStateInterface} appState
+   * @param {HTMLDivElement} plotDiv
+   * @param {(newRule: RuleResponse) => void} callback
+   * @param {JQuery} parentDom
+   * @param {(msg: string) => void} errorMsg
+   */
   constructor(tiling, appState, plotDiv, callback, parentDom, errorMsg) {
+    /** @type {TilingInterface} */
     this.tiling = tiling;
+    /** @type {AppStateInterface} */
     this.appState = appState;
+    /** @type {string} */
     this.plotDiv = plotDiv.outerHTML;
+    /** @type {(newRule: RuleResponse) => void} */
     this.callback = callback;
+    /** @type {JQuery} */
     this.parentDom = parentDom;
+    /** @type {(msg: string) => void} */
     this.errorMsg = errorMsg;
   }
 
+  /**
+   * Display error message given status code.
+   *
+   * @param {number} status
+   */
   displayError(status) {
     if (status < 0) {
       this.errorMsg('Server unavailable');
@@ -33,6 +66,11 @@ class StrategyDisplay {
     }
   }
 
+  /**
+   * Take the appropriate action given response from server.
+   *
+   * @param {{status: number, data: null|RuleResponse}} res
+   */
   handleResponse(res) {
     if (res.status === statusCodes.OK) {
       this.callback(res.data);
@@ -41,6 +79,9 @@ class StrategyDisplay {
     }
   }
 
+  /**
+   * Add components to dom elements.
+   */
   plot() {
     this.addCellInsertionUI();
     this.addFactorUI();

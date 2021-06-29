@@ -1,5 +1,8 @@
 /**
  * Download content as a file.
+ *
+ * @param {Object} content
+ * @param {string} fileName
  */
 const downloadJson = (content, fileName) => {
   const a = document.createElement('a');
@@ -11,6 +14,10 @@ const downloadJson = (content, fileName) => {
 
 /**
  * Wrap element in div with id.
+ *
+ * @param {string} id
+ * @param {HTMLElement} content
+ * @returns {HTMLDivElement} A div with id containing the element as child
  */
 const divWrap = (id, content) => {
   const container = document.createElement('div');
@@ -21,6 +28,11 @@ const divWrap = (id, content) => {
 
 /**
  * Create a bootstrap accordion item.
+ *
+ * @param {number} idx
+ * @param {string} title
+ * @param {string} accordionBody
+ * @returns {string} BS accordion html string
  */
 const accordionItem = (idx, title, accordionBody) => `<div class="accordion-item">
     <h2 class="accordion-header" id="panelsStayOpen-heading${idx}">
@@ -37,11 +49,17 @@ const accordionItem = (idx, title, accordionBody) => `<div class="accordion-item
 
 /**
  * Bootstrap list item.
+ *
+ * @param {string} content
+ * @returns {string} BS list item
  */
 const bsLI = (content) => `<li class="list-group-item">${content}</li>`;
 
 /**
  * Bootstrap unorder list with flush class.
+ *
+ * @param {string} content
+ * @returns {string} BS ul with flush clash
  */
 const bsULFlush = (content) => `<ul class="list-group list-group-flush">${content}</ul>`;
 

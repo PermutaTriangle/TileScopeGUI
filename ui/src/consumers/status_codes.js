@@ -17,12 +17,16 @@ const statusCode = {
    * Failed indicates that the request should be repeated without the Expect
    * header as it indicates that the server doesn't support expectations (this
    * is the case, for example, of HTTP/1.0 servers).
+   *
+   * @type {100}
    */
   CONTINUE: 100,
 
   /**
    * The requester has asked the server to switch protocols and the server has
    * agreed to do so.
+   *
+   * @type {101}
    */
   SWITCHING_PROTOCOLS: 101,
 
@@ -32,11 +36,15 @@ const statusCode = {
    * server has received and is processing the request, but no response is
    * available yet. This prevents the client from timing out and assuming the
    * request was lost.
+   *
+   * @type {102}
    */
   PROCESSING: 102,
 
   /**
    * Used to return some response headers before final HTTP message.
+   *
+   * @type {103}
    */
   EARLY_HINTS: 103,
 
@@ -46,12 +54,16 @@ const statusCode = {
    * contain an entity corresponding to the requested resource. In a POST
    * request, the response will contain an entity describing or containing the
    * result of the action.
+   *
+   * @type {200}
    */
   OK: 200,
 
   /**
    * The request has been fulfilled, resulting in the creation of a new
    * resource.
+   *
+   * @type {201}
    */
   CREATED: 201,
 
@@ -59,6 +71,8 @@ const statusCode = {
    * The request has been accepted for processing, but the processing has not
    * been completed. The request might or might not be eventually acted upon,
    * and may be disallowed when processing occurs.
+   *
+   * @type {202}
    */
   ACCEPTED: 202,
 
@@ -66,12 +80,16 @@ const statusCode = {
    * The server is a transforming proxy (e.g. a Web accelerator) that received a
    * 200 OK from its origin, but is returning a modified version of the origin's
    * response.
+   *
+   * @type {203}
    */
   NON_AUTHORITATIVE_INFORMATION: 203,
 
   /**
    * The server successfully processed the request and is not returning any
    * content.
+   *
+   * @type {204}
    */
   NO_CONTENT: 204,
 
@@ -79,6 +97,8 @@ const statusCode = {
    * The server successfully processed the request, but is not returning any
    * content. Unlike a 204 response, this response requires that the requester
    * reset the document view.
+   *
+   * @type {205}
    */
   RESET_CONTENT: 205,
 
@@ -87,6 +107,8 @@ const statusCode = {
    * range header sent by the client. The range header is used by HTTP clients
    * to enable resuming of interrupted downloads, or split a download into
    * multiple simultaneous streams.
+   *
+   * @type {206}
    */
   PARTIAL_CONTENT: 206,
 
@@ -94,12 +116,16 @@ const statusCode = {
    * The message body that follows is by default an XML message and can contain
    * a number of separate response codes, depending on how many sub-requests
    * were made.
+   *
+   * @type {207}
    */
   MULTI_STATUS: 207,
 
   /**
    * The members of a DAV binding have already been enumerated in a preceding
    * part of the (multistatus) response, and are not being included again.
+   *
+   * @type {208}
    */
   ALREADY_REPORTED: 208,
 
@@ -107,6 +133,8 @@ const statusCode = {
    * The server has fulfilled a request for the resource, and the response is a
    * representation of the result of one or more instance-manipulations applied
    * to the current instance.
+   *
+   * @type {226}
    */
   IM_USED: 226,
 
@@ -115,11 +143,15 @@ const statusCode = {
    * choose (via agent-driven content negotiation). For example, this code could
    * be used to present multiple video format options, to list files with
    * different filename extensions, or to suggest word-sense disambiguation.
+   *
+   * @type {300}
    */
   MULTIPLE_CHOICES: 300,
 
   /**
    * This and all future requests should be directed to the given URI.
+   *
+   * @type {301}
    */
   MOVED_PERMANENTLY: 301,
 
@@ -132,6 +164,8 @@ const statusCode = {
    * functionality of a 303 See Other. Therefore, HTTP/1.1 added status codes
    * 303 and 307 to distinguish between the two behaviours. However, some Web
    * applications and frameworks use the 302 status code as if it were the 303.
+   *
+   * @type {302}
    */
   FOUND: 302,
 
@@ -140,6 +174,8 @@ const statusCode = {
    * method. When received in response to a POST (or PUT/DELETE), the client
    * should presume that the server has received the data and should issue a new
    * GET request to the given URI.
+   *
+   * @type {303}
    */
   SEE_OTHER: 303,
 
@@ -148,6 +184,8 @@ const statusCode = {
    * specified by the request headers If-Modified-Since or If-None-Match. In
    * such case, there is no need to retransmit the resource since the client
    * still has a previously-downloaded copy.
+   *
+   * @type {304}
    */
   NOT_MODIFIED: 304,
 
@@ -156,12 +194,16 @@ const statusCode = {
    * which is provided in the response. Many HTTP clients (such as Mozilla and
    * Internet Explorer) do not correctly handle responses with this status code,
    * primarily for security reasons.
+   *
+   * @type {305}
    */
   USE_PROXY: 305,
 
   /**
    * No longer used. Originally meant "Subsequent requests should use the
    * specified proxy."
+   *
+   * @type {306}
    */
   SWITCH_PROXY: 306,
 
@@ -171,6 +213,8 @@ const statusCode = {
    * was historically implemented, the request method is not allowed to be
    * changed when reissuing the original request. For example, a POST request
    * should be repeated using another POST request.
+   *
+   * @type {307}
    */
   TEMPORARY_REDIRECT: 307,
 
@@ -179,6 +223,8 @@ const statusCode = {
    * 307 and 308 parallel the behaviors of 302 and 301, but do not allow the
    * HTTP method to change. So, for example, submitting a form to a permanently
    * redirected resource may continue smoothly.
+   *
+   * @type {308}
    */
   PERMANENT_REDIRECT: 308,
 
@@ -186,6 +232,8 @@ const statusCode = {
    * The server cannot or will not process the request due to an apparent client
    * error (e.g., malformed request syntax, size too large, invalid request
    * message framing, or deceptive request routing).
+   *
+   * @type {400}
    */
   BAD_REQUEST: 400,
 
@@ -196,6 +244,8 @@ const statusCode = {
    * to the requested resource. See Basic access authentication and Digest
    * access authentication. 401 semantically means "unauthenticated", i.e. the
    * user does not have the necessary credentials.
+   *
+   * @type {401}
    */
   UNAUTHORIZED: 401,
 
@@ -206,6 +256,8 @@ const statusCode = {
    * code is not usually used. Google Developers API uses this status if a
    * particular developer has exceeded the daily limit on requests. Sipgate uses
    * this code if an account does not have sufficient funds to start a call.
+   *
+   * @type {402}
    */
   PAYMENT_REQUIRED: 402,
 
@@ -213,12 +265,16 @@ const statusCode = {
    * The request was valid, but the server is refusing action. The user might
    * not have the necessary permissions for a resource, or may need an account
    * of some sort.
+   *
+   * @type {403}
    */
   FORBIDDEN: 403,
 
   /**
    * The requested resource could not be found but may be available in the
    * future. Subsequent requests by the client are permissible.
+   *
+   * @type {404}
    */
   NOT_FOUND: 404,
 
@@ -226,6 +282,8 @@ const statusCode = {
    * A request method is not supported for the requested resource; for example,
    * a GET request on a form that requires data to be presented via POST, or a
    * PUT request on a read-only resource.
+   *
+   * @type {405}
    */
   METHOD_NOT_ALLOWED: 405,
 
@@ -233,11 +291,15 @@ const statusCode = {
    * The requested resource is capable of generating only content not acceptable
    * according to the Accept headers sent in the request. See Content
    * negotiation.
+   *
+   * @type {406}
    */
   NOT_ACCEPTABLE: 406,
 
   /**
    * The client must first authenticate itself with the proxy.
+   *
+   * @type {407}
    */
   PROXY_AUTHENTICATION_REQUIRED: 407,
 
@@ -246,6 +308,8 @@ const statusCode = {
    * specifications: "The client did not produce a request within the time that
    * the server was prepared to wait. The client MAY repeat the request without
    * modifications at any later time."
+   *
+   * @type {408}
    */
   REQUEST_TIMEOUT: 408,
 
@@ -253,6 +317,8 @@ const statusCode = {
    * Indicates that the request could not be processed because of conflict in
    * the current state of the resource, such as an edit conflict between
    * multiple simultaneous updates.
+   *
+   * @type {409}
    */
   CONFLICT: 409,
 
@@ -264,24 +330,32 @@ const statusCode = {
    * Clients such as search engines should remove the resource from their
    * indices. Most use cases do not require clients and search engines to purge
    * the resource, and a "404 Not Found" may be used instead.
+   *
+   * @type {410}
    */
   GONE: 410,
 
   /**
    * The request did not specify the length of its content, which is required by
    * the requested resource.
+   *
+   * @type {411}
    */
   LENGTH_REQUIRED: 411,
 
   /**
    * The server does not meet one of the preconditions that the requester put on
    * the request.
+   *
+   * @type {412}
    */
   PRECONDITION_FAILED: 412,
 
   /**
    * The request is larger than the server is willing or able to process.
    * Previously called "Request Entity Too Large".
+   *
+   * @type {413}
    */
   PAYLOAD_TOO_LARGE: 413,
 
@@ -290,6 +364,8 @@ const statusCode = {
    * of too much data being encoded as a query-string of a GET request, in which
    * case it should be converted to a POST request. Called "Request-URI Too
    * Long" previously.
+   *
+   * @type {414}
    */
   URI_TOO_LONG: 414,
 
@@ -297,6 +373,8 @@ const statusCode = {
    * The request entity has a media type which the server or resource does not
    * support. For example, the client uploads an image as image/svg+xml, but the
    * server requires that images use a different format.
+   *
+   * @type {415}
    */
   UNSUPPORTED_MEDIA_TYPE: 415,
 
@@ -305,11 +383,15 @@ const statusCode = {
    * server cannot supply that portion. For example, if the client asked for a
    * part of the file that lies beyond the end of the file. Called "Requested
    * Range Not Satisfiable" previously.
+   *
+   * @type {416}
    */
   RANGE_NOT_SATISFIABLE: 416,
 
   /**
    * The server cannot meet the requirements of the Expect request-header field.
+   *
+   * @type {417}
    */
   EXPECTATION_FAILED: 417,
 
@@ -319,35 +401,47 @@ const statusCode = {
    * expected to be implemented by actual HTTP servers. The RFC specifies this
    * code should be returned by teapots requested to brew coffee. This HTTP
    * status is used as an Easter egg in some websites, including Google.com.
+   *
+   * @type {418}
    */
   IM_A_TEAPOT: 418,
 
   /**
    * The request was directed at a server that is not able to produce a response
    * (for example because of connection reuse).
+   *
+   * @type {421}
    */
   MISDIRECTED_REQUEST: 421,
 
   /**
    * The request was well-formed but was unable to be followed due to semantic
    * errors.
+   *
+   * @type {422}
    */
   UNPROCESSABLE_ENTITY: 422,
 
   /**
    * The resource that is being accessed is locked.
+   *
+   * @type {423}
    */
   LOCKED: 423,
 
   /**
    * The request failed because it depended on another request and that request
    * failed (e.g., a PROPPATCH).
+   *
+   * @type {424}
    */
   FAILED_DEPENDENCY: 424,
 
   /**
    * The client should switch to a different protocol such as TLS/1.0, given in
    * the Upgrade header field.
+   *
+   * @type {426}
    */
   UPGRADE_REQUIRED: 426,
 
@@ -356,18 +450,24 @@ const statusCode = {
    * prevent the 'lost update' problem, where a client GETs a resource's state,
    * modifies it, and PUTs it back to the server, when meanwhile a third party
    * has modified the state on the server, leading to a conflict."
+   *
+   * @type {428}
    */
   PRECONDITION_REQUIRED: 428,
 
   /**
    * The user has sent too many requests in a given amount of time. Intended for
    * use with rate-limiting schemes.
+   *
+   * @type {429}
    */
   TOO_MANY_REQUESTS: 429,
 
   /**
    * The server is unwilling to process the request because either an individual
    * header field, or all the header fields collectively, are too large.
+   *
+   * @type {431}
    */
   REQUEST_HEADER_FIELDS_TOO_LARGE: 431,
 
@@ -376,12 +476,16 @@ const statusCode = {
    * or to a set of resources that includes the requested resource. The code 451
    * was chosen as a reference to the novel Fahrenheit 451 (see the
    * Acknowledgements in the RFC).
+   *
+   * @type {451}
    */
   UNAVAILABLE_FOR_LEGAL_REASONS: 451,
 
   /**
    * A generic error message, given when an unexpected condition was encountered
    * and no more specific message is suitable.
+   *
+   * @type {500}
    */
   INTERNAL_SERVER_ERROR: 500,
 
@@ -389,52 +493,70 @@ const statusCode = {
    * The server either does not recognize the request method, or it lacks the
    * ability to fulfil the request. Usually this implies future availability
    * (e.g., a new feature of a web-service API).
+   *
+   * @type {501}
    */
   NOT_IMPLEMENTED: 501,
 
   /**
    * The server was acting as a gateway or proxy and received an invalid
    * response from the upstream server.
+   *
+   * @type {502}
    */
   BAD_GATEWAY: 502,
 
   /**
    * The server is currently unavailable (because it is overloaded or down for
    * maintenance). Generally, this is a temporary state.
+   *
+   * @type {503}
    */
   SERVICE_UNAVAILABLE: 503,
 
   /**
    * The server was acting as a gateway or proxy and did not receive a timely
    * response from the upstream server.
+   *
+   * @type {504}
    */
   GATEWAY_TIMEOUT: 504,
 
   /**
    * The server does not support the HTTP protocol version used in the request.
+   *
+   * @type {505}
    */
   HTTP_VERSION_NOT_SUPPORTED: 505,
 
   /**
    * Transparent content negotiation for the request results in a circular
    * reference.
+   *
+   * @type {506}
    */
   VARIANT_ALSO_NEGOTIATES: 506,
 
   /**
    * The server is unable to store the representation needed to complete the
    * request.
+   *
+   * @type {507}
    */
   INSUFFICIENT_STORAGE: 507,
 
   /**
    * The server detected an infinite loop while processing the request (sent in
    * lieu of 208 Already Reported).
+   *
+   * @type {508}
    */
   LOOP_DETECTED: 508,
 
   /**
    * Further extensions to the request are required for the server to fulfil it.
+   *
+   * @type {510}
    */
   NOT_EXTENDED: 510,
 
@@ -443,6 +565,8 @@ const statusCode = {
    * by intercepting proxies used to control access to the network (e.g.,
    * "captive portals" used to require agreement to Terms of Service before
    * granting full Internet access via a Wi-Fi hotspot).
+   *
+   * @type {511}
    */
   NETWORK_AUTHENTICATION_REQUIRED: 511,
 };
