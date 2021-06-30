@@ -104,6 +104,7 @@
  * @property {{dir: 'n'|'w'|'s'|'e', row: boolean}} rowColPlace
  * @property {{patt: string}} cellInsert
  * @property {{dir: 'n'|'w'|'s'|'e', idx: number}} reqPlace
+ * @property {{row: boolean}} fusion
  * @property {(patt: string) => void} setCellInsertPatt
  * @property {() => string} getCellInsertPatt
  * @property {(dir: 'n'|'w'|'s'|'e') => void} setRowColPlacementDirection
@@ -114,6 +115,8 @@
  * @property {() => 'n'|'w'|'s'|'e'} getReqPlacementDirection
  * @property {(idx: number) => void} setReqPlacementIdx
  * @property {() => number} getReqPlacementIdx
+ * @property {(row: boolean) => void} setFusionRow
+ * @property {() => boolean} getFusionRow
  */
 
 /**

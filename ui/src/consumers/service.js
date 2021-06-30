@@ -79,6 +79,17 @@ const reqPlacement = async (tilingJson, x, y, idx, dir) =>
 const addAssumption = async (tilingJson, pos) =>
   apiPost('/strategies/addassumption', { tiling: tilingJson, pos });
 
+/**
+ * An endpoint for fusing given a tiling.
+ *
+ * @param {TilingJson} tilingJson
+ * @param {number} idx
+ * @param {boolean} row
+ * @returns {RuleResponsePromise} promise with rule
+ */
+const fusion = async (tilingJson, idx, row) =>
+  apiPost('/strategies/fusion', { tiling: tilingJson, idx, row });
+
 export {
   getTiling,
   rowColPlacement,
@@ -87,4 +98,5 @@ export {
   rowColSeparation,
   reqPlacement,
   addAssumption,
+  fusion,
 };

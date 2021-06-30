@@ -12,6 +12,8 @@ class AppState {
     this.cellInsert = { patt: '0' };
     /** @type {{dir: 'n'|'w'|'s'|'e', idx: number}} */
     this.reqPlace = { dir: 'n', idx: 0 };
+    /** @type {{row: boolean }} */
+    this.fusion = { row: true };
   }
 
   /**
@@ -102,6 +104,24 @@ class AppState {
    */
   getReqPlacementIdx() {
     return this.reqPlace.idx;
+  }
+
+  /**
+   * Set row (or column) for fusion.
+   *
+   * @param {boolean} row
+   */
+  setFusionRow(row) {
+    this.fusion.row = row;
+  }
+
+  /**
+   * Get row (or column) for fusion
+   *
+   * @returns {boolean} fuse rows
+   */
+  getFusionRow() {
+    return this.fusion.row;
   }
 }
 

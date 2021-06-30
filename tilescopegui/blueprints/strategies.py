@@ -8,6 +8,7 @@ from tilings.assumptions import TrackingAssumption
 from tilings.griddedperm import GriddedPerm
 from tilings.strategies import FactorFactory, RowAndColumnPlacementFactory
 from tilings.strategies.assumption_insertion import AddAssumptionsStrategy
+from tilings.strategies.fusion import FusionStrategy
 from tilings.strategies.requirement_insertion import RequirementInsertionStrategy
 from tilings.strategies.requirement_placement import RequirementPlacementStrategy
 from tilings.strategies.row_and_col_separation import RowColumnSeparationStrategy
@@ -69,7 +70,9 @@ def _get_row_col_placement_input() -> Tuple[Tiling, int, bool, int]:
         idx: int = data["idx"]
     except (TypeError, KeyError, ValueError) as exc:
         raise BadRequest() from exc
-    if not isinstance(direction, int) or not isinstance(row, bool):
+    if not (
+        isinstance(direction, int) and isinstance(row, bool) and isinstance(idx, int)
+    ):
         raise BadRequest()
     if direction < 0 or direction > 3:
         raise BadRequest()
@@ -233,4 +236,35 @@ def add_assumption() -> dict:
         raise BadRequest() from exc
     if not rule.children or rule.children[0] == tiling:
         raise BadRequest()
+    return rule_as_json(rule)
+
+
+def _fusion_input() -> Tuple[Tiling, int, bool]:
+    data = _get_request_json()
+    try:
+        tiling: Tiling = Tiling.from_dict(data["tiling"])
+        row: bool = data["row"]
+        idx: int = data["idx"]
+    except (TypeError, KeyError, ValueError) as exc:
+        raise BadRequest() from exc
+    if not isinstance(idx, int) or not isinstance(row, bool):
+        raise BadRequest()
+    if (
+        idx < 0
+        or (row and idx >= tiling.dimensions[1] - 1)
+        or (not row and idx >= tiling.dimensions[0] - 1)
+    ):
+        raise BadRequest()
+    return tiling, idx, row
+
+
+@strategies_blueprint.route("/fusion", methods=["POST"])
+def fusion() -> dict:
+    """Apply fusion strategy to given tiling."""
+    tiling, idx, row = _fusion_input()
+    arguments = (idx, None) if row else (None, idx)
+    try:
+        rule = FusionStrategy(*arguments)(tiling)
+    except StrategyDoesNotApply as exc:
+        raise BadRequest() from exc
     return rule_as_json(rule)

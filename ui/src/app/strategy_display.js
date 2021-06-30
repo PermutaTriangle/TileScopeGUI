@@ -8,6 +8,8 @@ import {
   cellInsertion,
   rowColSeparation,
   reqPlacement,
+  addAssumption,
+  fusion,
 } from '../consumers/service';
 import { accordionItem } from '../utils/dom_utils';
 import { boxedArrowN, boxedArrowW, boxedArrowS, boxedArrowE } from './svgs';
@@ -123,11 +125,14 @@ class StrategyDisplay {
       accordionItemId += 1;
       return accordionItemId;
     };
+    // Order displayed
     this.addFactorUI(getId());
     this.addRowColSeparationUI(getId());
     this.addRowColPlacementUI(getId());
     this.addCellInsertionUI(getId());
     this.addReqPlacementUI(getId());
+    this.addAssumptionUI(getId());
+    this.addFusionUi(getId());
   }
 
   // #region Cell insertion
@@ -136,7 +141,6 @@ class StrategyDisplay {
    *
    */
   addCellInsertionUI(acId) {
-    // TODO: any pattern and I guess we need to specify index within cell when multiple points
     const content = `<div id="cell-ins-fig" class="cell-hoverable">${this.plotDiv}</div>`;
     this.parentDom.append(accordionItem(acId, 'Cell insertion', content));
     $('#cell-ins-fig .non-empty-cell').on('click', async (evt) => {
@@ -168,9 +172,9 @@ class StrategyDisplay {
     const colChecked = row ? '' : ' checked';
     const rowChecked = row ? ' checked' : '';
     return `<div id="rcp-row" class="btn-group" role="group" aria-label="Basic radio toggle button group">
-    <input type="radio" class="btn-check" name="btnradio" id="rcp-sel-r" autocomplete="off"${rowChecked}>
+    <input type="radio" class="btn-check" name="rcp-btn" id="rcp-sel-r" autocomplete="off"${rowChecked}>
     <label class="btn btn-outline-primary" for="rcp-sel-r">Row</label>
-    <input type="radio" class="btn-check" name="btnradio" id="rcp-sel-c" autocomplete="off"${colChecked}>
+    <input type="radio" class="btn-check" name="rcp-btn" id="rcp-sel-c" autocomplete="off"${colChecked}>
     <label class="btn btn-outline-primary" for="rcp-sel-c">Column</label>
   </div>`;
   }
@@ -261,6 +265,66 @@ class StrategyDisplay {
     });
   }
 
+  // #endregion
+
+  // #region Add assumption
+
+  addAssumptionUI(acId) {
+    const btn = `<button id="add-ass-btn">Add assumption</button>`;
+    const content = `<div id="add-ass" class="cell-hoverable">${this.plotDiv}</div>${btn}`;
+    this.parentDom.append(accordionItem(acId, 'Add assumption', content));
+
+    $('#add-ass td.non-empty-cell').on('click', (evt) => {
+      if ($(evt.currentTarget).hasClass('add-ass-toggle')) {
+        $(evt.currentTarget).removeClass('add-ass-toggle');
+      } else {
+        $(evt.currentTarget).addClass('add-ass-toggle');
+      }
+    });
+
+    $('#add-ass-btn').on('click', async () => {
+      const pos = [];
+      $('#add-ass td.add-ass-toggle').each((_, e) => {
+        pos.push(StrategyDisplay.getCoordsFromCellClickEvent(e.className));
+      });
+      if (pos.length === 0) {
+        this.errorMsg('No assumption added');
+      } else {
+        const res = await addAssumption(this.tiling.tilingJson, pos);
+        this.handleResponse(res);
+      }
+    });
+  }
+
+  // #endregion
+
+  // #region Fusion
+  addFusionUi(acId) {
+    const initRow = this.appState.getFusionRow();
+    const colChecked = initRow ? '' : ' checked';
+    const rowChecked = initRow ? ' checked' : '';
+    const rowCol = `<div id="fusion-row" class="btn-group" role="group" aria-label="Basic radio toggle button group">
+      <input type="radio" class="btn-check" name="fus-btn" id="fusion-sel-r" autocomplete="off"${rowChecked}>
+      <label class="btn btn-outline-primary" for="fusion-sel-r">Row</label>
+      <input type="radio" class="btn-check" name="fus-btn" id="fusion-sel-c" autocomplete="off"${colChecked}>
+      <label class="btn btn-outline-primary" for="fusion-sel-c">Column</label>
+    </div>`;
+
+    const content = `<div id="fusion-fig" class="cell-hoverable">${this.plotDiv}</div>${rowCol}`;
+    this.parentDom.append(accordionItem(acId, 'Fusion', content));
+
+    $('#fusion-row > input').on('change', (evt) => {
+      this.appState.setFusionRow(evt.currentTarget.id.slice(-1) === 'r');
+    });
+
+    $('#fusion-fig .non-empty-cell').on('click', async (evt) => {
+      const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
+      const row = this.appState.getFusionRow();
+      const idx = row ? y : x;
+      const res = await fusion(this.tiling.tilingJson, idx, row);
+      this.handleResponse(res);
+    });
+  }
   // #endregion
 }
 
