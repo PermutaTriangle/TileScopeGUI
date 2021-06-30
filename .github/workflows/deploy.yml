@@ -9,27 +9,26 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-    - name: compile static content
-      working-directory: ./ui
-      run: |
-        npm install
-        npm run-script build
-    - name: install py dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-    - name: build
-      run: python setup.py sdist
-    # TODO
-    # - name: deploy
-    #  env:
-    #    TWINE_USERNAME: __token__
-    #    TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-    #  run: twine upload dist/*
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: compile static content
+        working-directory: ./ui
+        run: |
+          npm install
+          npm run-script build
+      - name: install py dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+      - name: build
+        run: python setup.py sdist
+      - name: deploy
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twine upload dist/*

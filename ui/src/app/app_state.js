@@ -10,6 +10,8 @@ class AppState {
     this.rowColPlace = { dir: 'n', row: true };
     /** @type {{patt: string}} */
     this.cellInsert = { patt: '0' };
+    /** @type {{dir: 'n'|'w'|'s'|'e', idx: number}} */
+    this.reqPlace = { dir: 'n', idx: 0 };
   }
 
   /**
@@ -64,6 +66,42 @@ class AppState {
    */
   getRowColPlacementRow() {
     return this.rowColPlace.row;
+  }
+
+  /**
+   * Set direction for requirement placement.
+   *
+   * @param {'n'|'w'|'s'|'e'} dir
+   */
+  setReqPlacementDirection(dir) {
+    this.reqPlace.dir = dir;
+  }
+
+  /**
+   * Get direction for requirement placement.
+   *
+   * @returns {'n'|'w'|'s'|'e'} direction
+   */
+  getReqPlacementDirection() {
+    return this.reqPlace.dir;
+  }
+
+  /**
+   * Set index for requirement placement.
+   *
+   * @param {number} idx
+   */
+  setReqPlacementIdx(idx) {
+    this.reqPlace.idx = idx;
+  }
+
+  /**
+   * Get index for requirement placement.
+   *
+   * @returns {number} index
+   */
+  getReqPlacementIdx() {
+    return this.reqPlace.idx;
   }
 }
 

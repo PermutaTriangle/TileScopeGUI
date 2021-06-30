@@ -35,7 +35,7 @@ const errorToResponse = (err) => {
  * @async
  * @param {string} path
  * @param {null|object} config
- * @returns {Promise.<{status: number, data: object|null}>}
+ * @returns {Promise.<{status: number, data: object|null}>} A promise with response
  */
 const apiGet = async (path, config = null) => {
   try {
@@ -53,7 +53,7 @@ const apiGet = async (path, config = null) => {
  * @param {string} path
  * @param {object} data
  * @param {null|object} config
- * @returns {Promise.<{status: number, data: object|null}>}
+ * @returns {Promise.<{status: number, data: object|null}>} A promise with response
  */
 const apiPost = async (path, data, config = null) => {
   try {

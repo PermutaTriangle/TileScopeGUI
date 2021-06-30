@@ -15,7 +15,7 @@
   outline: none;
 }
 
-.rcp-togglable > svg {
+.dir-togglable > svg {
   cursor: pointer;
   -webkit-transition: background-color 0.35s ease-in-out;
   -moz-transition: background-color 0.35s ease-out;
@@ -23,6 +23,6 @@
   transition: background-color 0.35s ease-out;
 }
 
-.rcp-toggled > svg {
+.dir-toggled > svg {
   background-color: cadetblue;
 }

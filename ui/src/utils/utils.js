@@ -20,7 +20,7 @@ const uuid = () =>
  * Check if input is string.
  *
  * @param {any} obj
- * @returns {boolea} true iff obj is a string.
+ * @returns {boolean} true iff obj is a string.
  */
 const isStr = (obj) => typeof obj === 'string' || obj instanceof String;
 
@@ -28,7 +28,7 @@ const isStr = (obj) => typeof obj === 'string' || obj instanceof String;
  * Check if input is an object.
  *
  * @param {any} obj
- * @returns {boolea} true iff obj is a js object.
+ * @returns {boolean} true iff obj is a js object.
  */
 const isObj = (obj) => typeof obj === 'object' && obj !== null;
 

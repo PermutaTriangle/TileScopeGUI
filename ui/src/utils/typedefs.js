@@ -1,3 +1,5 @@
+// Some of these might not be jsdoc compliant but will work for the vs code intellisense.
+
 /**
  * @typedef GriddedPermJson
  * @property {number[]} patt
@@ -101,12 +103,17 @@
  * @typedef AppStateInterface
  * @property {{dir: 'n'|'w'|'s'|'e', row: boolean}} rowColPlace
  * @property {{patt: string}} cellInsert
+ * @property {{dir: 'n'|'w'|'s'|'e', idx: number}} reqPlace
  * @property {(patt: string) => void} setCellInsertPatt
  * @property {() => string} getCellInsertPatt
  * @property {(dir: 'n'|'w'|'s'|'e') => void} setRowColPlacementDirection
  * @property {() => 'n'|'w'|'s'|'e'} getRowColPlacementDirection
  * @property {(row: boolean) => void} setRowColPlacementRow
  * @property {() => boolean} getRowColPlacementRow
+ * @property {(dir: 'n'|'w'|'s'|'e') => void} setReqPlacementDirection
+ * @property {() => 'n'|'w'|'s'|'e'} getReqPlacementDirection
+ * @property {(idx: number) => void} setReqPlacementIdx
+ * @property {() => number} getReqPlacementIdx
  */
 
 /**
