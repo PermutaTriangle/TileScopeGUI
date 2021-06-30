@@ -19,6 +19,7 @@ const directionStringToNumber = (dir) => {
 
 /**
  * Convert number to lower case directional letter.
+ *
  * @param {0|1|2|3} dir
  * @returns {'e'|'n'|'w'|'s'} The letter corresponding to the number.
  */

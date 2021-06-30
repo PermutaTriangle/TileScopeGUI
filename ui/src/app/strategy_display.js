@@ -2,7 +2,13 @@ import $ from 'jquery';
 
 import statusCodes from '../consumers/status_codes';
 
-import { rowColPlacement, factor, cellInsertion, rowColSeparation } from '../consumers/service';
+import {
+  rowColPlacement,
+  factor,
+  cellInsertion,
+  rowColSeparation,
+  reqPlacement,
+} from '../consumers/service';
 import { accordionItem } from '../utils/dom_utils';
 import { boxedArrowN, boxedArrowW, boxedArrowS, boxedArrowE } from './svgs';
 import { directionStringToNumber } from '../utils/permuta_utils';
@@ -25,6 +31,34 @@ class StrategyDisplay {
     const pattern = /matrix_([\d+])_([\d+])/gm;
     const [, x, y] = pattern.exec(className);
     return [+x, +y];
+  }
+
+  /**
+   * Create a table of directional arrows.
+   *
+   * @param {string} idPrefix
+   * @param {'n'|'w'|'s'|'e'} initialToggle
+   * @param {number} size
+   * @returns {string} raw HTML string
+   */
+  static directionTable(idPrefix, initialToggle, size) {
+    const north = `<td id="${idPrefix}-n" class="${idPrefix}-togglable dir-togglable${
+      initialToggle === 'n' ? ' dir-toggled' : ''
+    }">${boxedArrowN(null, size, size)}</td>`;
+    const west = `<td id="${idPrefix}-w" class="${idPrefix}-togglable dir-togglable${
+      initialToggle === 'w' ? ' dir-toggled' : ''
+    }">${boxedArrowW(null, size, size)}</td>`;
+    const east = `<td id="${idPrefix}-e" class="${idPrefix}-togglable dir-togglable${
+      initialToggle === 'e' ? ' dir-toggled' : ''
+    }">${boxedArrowE(null, size, size)}</td>`;
+    const south = `<td id="${idPrefix}-s" class="${idPrefix}-togglable dir-togglable${
+      initialToggle === 's' ? ' dir-toggled' : ''
+    }">${boxedArrowS(null, size, size)}</td>`;
+    return `<table>
+      <tr><td></td>${north}<td></td></tr>
+      <tr>${west}<td></td>${east}</tr>
+      <tr><td></td>${south}<td></td></tr>
+      </table>`;
   }
 
   /**
@@ -83,10 +117,17 @@ class StrategyDisplay {
    * Add components to dom elements.
    */
   plot() {
-    this.addCellInsertionUI();
-    this.addFactorUI();
-    this.addRowColPlacementUI();
-    this.addRowColSeparationUI();
+    let accordionItemId = 4;
+    /** @returns {number} */
+    const getId = () => {
+      accordionItemId += 1;
+      return accordionItemId;
+    };
+    this.addFactorUI(getId());
+    this.addRowColSeparationUI(getId());
+    this.addRowColPlacementUI(getId());
+    this.addCellInsertionUI(getId());
+    this.addReqPlacementUI(getId());
   }
 
   // #region Cell insertion
@@ -94,10 +135,10 @@ class StrategyDisplay {
   /**
    *
    */
-  addCellInsertionUI() {
+  addCellInsertionUI(acId) {
     // TODO: any pattern and I guess we need to specify index within cell when multiple points
     const content = `<div id="cell-ins-fig" class="cell-hoverable">${this.plotDiv}</div>`;
-    this.parentDom.append(accordionItem(5, 'Cell insertion', content));
+    this.parentDom.append(accordionItem(acId, 'Cell insertion', content));
     $('#cell-ins-fig .non-empty-cell').on('click', async (evt) => {
       const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
       const res = await cellInsertion(this.tiling.tilingJson, x, y, '0');
@@ -109,9 +150,9 @@ class StrategyDisplay {
 
   // #region Factor
 
-  addFactorUI() {
+  addFactorUI(acId) {
     const content = `<button id="factor">Factor</button>`;
-    this.parentDom.append(accordionItem(6, 'Factor', content));
+    this.parentDom.append(accordionItem(acId, 'Factor', content));
     $('#factor').on('click', async () => {
       const res = await factor(this.tiling.tilingJson);
       this.handleResponse(res);
@@ -121,27 +162,6 @@ class StrategyDisplay {
   // #endregion
 
   // #region Row/Col placement
-
-  getRowColPlacementDirectionTable() {
-    const toggled = this.appState.getRowColPlacementDirection();
-    const north = `<td id="rcp-n" class="rcp-togglable${
-      toggled === 'n' ? ' rcp-toggled' : ''
-    }">${boxedArrowN(null, 35, 35)}</td>`;
-    const west = `<td id="rcp-w" class="rcp-togglable${
-      toggled === 'w' ? ' rcp-toggled' : ''
-    }">${boxedArrowW(null, 35, 35)}</td>`;
-    const east = `<td id="rcp-e" class="rcp-togglable${
-      toggled === 'e' ? ' rcp-toggled' : ''
-    }">${boxedArrowE(null, 35, 35)}</td>`;
-    const south = `<td id="rcp-s" class="rcp-togglable${
-      toggled === 's' ? ' rcp-toggled' : ''
-    }">${boxedArrowS(null, 35, 35)}</td>`;
-    return `<table>
-      <tr><td></td>${north}<td></td></tr>
-      <tr>${west}<td></td>${east}</tr>
-      <tr><td></td>${south}<td></td></tr>
-      </table>`;
-  }
 
   getRowColPlacementRowColRadioButtons() {
     const row = this.appState.getRowColPlacementRow();
@@ -155,11 +175,15 @@ class StrategyDisplay {
   </div>`;
   }
 
-  addRowColPlacementAddToDom() {
-    const arrows = this.getRowColPlacementDirectionTable();
+  addRowColPlacementAddToDom(acId) {
+    const arrows = StrategyDisplay.directionTable(
+      'rcp',
+      this.appState.getRowColPlacementDirection(),
+      35,
+    );
     const rowcol = this.getRowColPlacementRowColRadioButtons();
     const content = `<div id="row-col-plc-fig" class="cell-hoverable">${this.plotDiv}</div>${arrows}${rowcol}`;
-    this.parentDom.append(accordionItem(7, 'Row/Column placement', content));
+    this.parentDom.append(accordionItem(acId, 'Row/Column placement', content));
   }
 
   addRowColPlacementSetEvents() {
@@ -167,8 +191,8 @@ class StrategyDisplay {
       const newDirection = evt.currentTarget.id.slice(-1);
       const oldDirection = this.appState.getRowColPlacementDirection();
       if (oldDirection !== newDirection) {
-        $(`#rcp-${oldDirection}`).removeClass('rcp-toggled');
-        evt.currentTarget.classList.add('rcp-toggled');
+        $(`#rcp-${oldDirection}`).removeClass('dir-toggled');
+        evt.currentTarget.classList.add('dir-toggled');
         this.appState.setRowColPlacementDirection(newDirection);
       }
     });
@@ -187,8 +211,8 @@ class StrategyDisplay {
     });
   }
 
-  addRowColPlacementUI() {
-    this.addRowColPlacementAddToDom();
+  addRowColPlacementUI(acId) {
+    this.addRowColPlacementAddToDom(acId);
     this.addRowColPlacementSetEvents();
   }
 
@@ -196,11 +220,43 @@ class StrategyDisplay {
 
   // #region Row/Col separation
 
-  addRowColSeparationUI() {
+  addRowColSeparationUI(acId) {
     const content = `<button id="separate">Separate</button>`;
-    this.parentDom.append(accordionItem(8, 'Row/Column separation', content));
+    this.parentDom.append(accordionItem(acId, 'Row/Column separation', content));
     $('#separate').on('click', async () => {
       const res = await rowColSeparation(this.tiling.tilingJson);
+      this.handleResponse(res);
+    });
+  }
+
+  // #endregion
+
+  // #region Requirement palcement
+
+  addReqPlacementUI(acId) {
+    const arrows = StrategyDisplay.directionTable(
+      'reqp',
+      this.appState.getReqPlacementDirection(),
+      35,
+    );
+    const content = `<div id="req-plc-fig" class="cell-hoverable">${this.plotDiv}</div>${arrows}`;
+    this.parentDom.append(accordionItem(acId, 'Requirement placement', content));
+
+    $('.reqp-togglable').on('click', (evt) => {
+      const newDirection = evt.currentTarget.id.slice(-1);
+      const oldDirection = this.appState.getReqPlacementDirection();
+      if (oldDirection !== newDirection) {
+        $(`#reqp-${oldDirection}`).removeClass('dir-toggled');
+        evt.currentTarget.classList.add('dir-toggled');
+        this.appState.setReqPlacementDirection(newDirection);
+      }
+    });
+
+    $('#req-plc-fig .non-empty-cell').on('click', async (evt) => {
+      const dir = directionStringToNumber(this.appState.getReqPlacementDirection());
+      const idx = this.appState.getReqPlacementIdx();
+      const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
+      const res = await reqPlacement(this.tiling.tilingJson, x, y, idx, dir);
       this.handleResponse(res);
     });
   }
