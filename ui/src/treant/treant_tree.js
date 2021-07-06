@@ -55,7 +55,7 @@ class Tree {
     const pId = parentTreeNode === null ? -1 : parentTreeNode.id;
     const oNewNode = this.nodeDB.createNode(nodeDefinition, pId, this);
     oNewNode.createGeometry(this);
-    oNewNode.parent().createSwitchGeometry(this);
+    // oNewNode.parent().createSwitchGeometry(this);
     this.positionTree();
     this.cfg.callback.onAfterAddNode.apply(this, [oNewNode, parentTreeNode, nodeDefinition]);
     return oNewNode;
