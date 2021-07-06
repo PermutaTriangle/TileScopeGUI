@@ -7,6 +7,8 @@ import Treant from '../treant/treant';
 import Rule from '../combinatorics/rule';
 import Modal from './modal';
 
+import '../utils/typedefs';
+
 /**
  * A component for the specification tree.
  */
@@ -121,6 +123,15 @@ class SpecTree {
   }
 
   /**
+   * Check if we have a specification.
+   *
+   * @returns {boolean} true iff spec
+   */
+  hasSpecification() {
+    return this.unverifiedLeaves.size === 0;
+  }
+
+  /**
    * Get root tiling.
    *
    * @returns {TilingInterface} root tiling
@@ -212,7 +223,7 @@ class SpecTree {
       this.setClickEventForNode(newNodeId);
     });
 
-    if (this.unverifiedLeaves.size === 0) this.errorDisplay.alert('Specification!', true);
+    if (this.hasSpecification()) this.errorDisplay.alert('Specification!', true);
   }
 
   /**
