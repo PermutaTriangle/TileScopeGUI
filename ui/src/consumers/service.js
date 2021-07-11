@@ -56,6 +56,14 @@ const cellInsertion = async (tilingJson, x, y, patt) =>
 const rowColSeparation = async (tilingJson) => apiPost('/strategies/rowcolsep', tilingJson);
 
 /**
+ * An endpoint for obstuction inferral.
+ *
+ * @param {TilingJson} tilingJson
+ * @returns {RuleResponsePromise} promise with rule
+ */
+const obstructionTransivity = async (tilingJson) => apiPost('/strategies/obstrans', tilingJson);
+
+/**
  * An endpoint for placing requirements given a tiling.
  *
  * @async
@@ -90,6 +98,17 @@ const addAssumption = async (tilingJson, pos) =>
 const fusion = async (tilingJson, idx, row) =>
   apiPost('/strategies/fusion', { tiling: tilingJson, idx, row });
 
+/**
+ * An endpoint for sliding given a tiling.
+ *
+ * @param {TilingJson} tilingJson
+ * @param {number} idx1
+ * @param {number} idx2
+ * @returns {RuleResponsePromise} promise with rule
+ */
+const sliding = async (tilingJson, idx1, idx2) =>
+  apiPost('/strategies/sliding', { tiling: tilingJson, idx1, idx2 });
+
 export {
   getTiling,
   rowColPlacement,
@@ -99,4 +118,6 @@ export {
   reqPlacement,
   addAssumption,
   fusion,
+  obstructionTransivity,
+  sliding,
 };

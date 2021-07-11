@@ -9,9 +9,11 @@ from tilings.griddedperm import GriddedPerm
 from tilings.strategies import FactorFactory, RowAndColumnPlacementFactory
 from tilings.strategies.assumption_insertion import AddAssumptionsStrategy
 from tilings.strategies.fusion import FusionStrategy
+from tilings.strategies.obstruction_inferral import ObstructionTransitivityFactory
 from tilings.strategies.requirement_insertion import RequirementInsertionStrategy
 from tilings.strategies.requirement_placement import RequirementPlacementStrategy
 from tilings.strategies.row_and_col_separation import RowColumnSeparationStrategy
+from tilings.strategies.sliding import SlidingFactory, SlidingStrategy
 from tilings.tiling import Tiling
 from werkzeug.exceptions import BadRequest
 
@@ -268,3 +270,51 @@ def fusion() -> dict:
     except StrategyDoesNotApply as exc:
         raise BadRequest() from exc
     return rule_as_json(rule)
+
+
+@strategies_blueprint.route("/obstrans", methods=["POST"])
+def obstruction_transivity() -> dict:
+    """Apply obstruction transivity strategy to given tiling."""
+    tiling = _get_tiling_input()
+    strat = _first_or_bad(ObstructionTransitivityFactory()(tiling))
+    rule = strat(tiling)
+    return rule_as_json(rule)
+
+
+def _get_sliding_input() -> Tuple[Tiling, int, int]:
+    data = _get_request_json()
+    try:
+        tiling: Tiling = Tiling.from_dict(data["tiling"])
+        idx1: int = data["idx1"]
+        idx2: int = data["idx2"]
+    except (TypeError, KeyError, ValueError) as exc:
+        raise BadRequest() from exc
+    if not isinstance(idx1, int) or not isinstance(idx2, int):
+        raise BadRequest()
+    if (
+        max(tiling.dimensions) < 2
+        or min(tiling.dimensions) != 1
+        or min(idx1, idx2) < 0
+        or max(idx1, idx2) >= max(tiling.dimensions)
+        or idx1 == idx2
+    ):
+        raise BadRequest()
+    return tiling, idx1, idx2
+
+
+@strategies_blueprint.route("/sliding", methods=["POST"])
+def sliding() -> dict:
+    """Apply sliding strategy to given tiling."""
+    tiling, idx1, idx2 = _get_sliding_input()
+    cells = max(tiling.dimensions)
+    offset_idx_set = {cells - idx1 - 1, cells - idx2 - 1}
+    idx_set = {idx1, idx2}
+    sym_type_to_idx_set = {0: idx_set, 1: offset_idx_set, 2: offset_idx_set, 3: idx_set}
+
+    for rule in SlidingFactory(True)(tiling):
+        assert isinstance(rule.strategy, SlidingStrategy)
+        if {rule.strategy.av_12, rule.strategy.av_123} == sym_type_to_idx_set[
+            rule.strategy.symmetry_type
+        ]:
+            return rule_as_json(rule)
+    raise BadRequest()

@@ -10,6 +10,8 @@ import {
   reqPlacement,
   addAssumption,
   fusion,
+  obstructionTransivity,
+  sliding,
 } from '../consumers/service';
 import { accordionItem } from '../utils/dom_utils';
 import { boxedArrowN, boxedArrowW, boxedArrowS, boxedArrowE } from './svgs';
@@ -128,12 +130,27 @@ class StrategyDisplay {
     // Order displayed
     this.addFactorUI(getId());
     this.addRowColSeparationUI(getId());
+    this.addObstructionTransivityUI(getId());
     this.addRowColPlacementUI(getId());
     this.addCellInsertionUI(getId());
     this.addReqPlacementUI(getId());
+    this.addSlidingUI(getId());
     this.addAssumptionUI(getId());
     this.addFusionUi(getId());
   }
+
+  // #region Obstruction transivity
+
+  addObstructionTransivityUI(acId) {
+    const content = `<button id="obstra">Obstruction transivity</button>`;
+    this.parentDom.append(accordionItem(acId, 'Obstruction transivity', content));
+    $('#obstra').on('click', async () => {
+      const res = await obstructionTransivity(this.tiling.tilingJson);
+      this.handleResponse(res);
+    });
+  }
+
+  // #endregion
 
   // #region Cell insertion
 
@@ -299,6 +316,7 @@ class StrategyDisplay {
   // #endregion
 
   // #region Fusion
+
   addFusionUi(acId) {
     const initRow = this.appState.getFusionRow();
     const colChecked = initRow ? '' : ' checked';
@@ -325,6 +343,40 @@ class StrategyDisplay {
       this.handleResponse(res);
     });
   }
+  // #endregion
+
+  // #region Sliding
+
+  addSlidingUI(acId) {
+    const btn = `<button id="sliding-btn">Add assumption</button>`;
+    const content = `<div id="sliding" class="cell-hoverable">${this.plotDiv}</div>${btn}`;
+    this.parentDom.append(accordionItem(acId, 'Sliding', content));
+    $('#sliding td.non-empty-cell').on('click', (evt) => {
+      if ($(evt.currentTarget).hasClass('sliding-toggle')) {
+        $(evt.currentTarget).removeClass('sliding-toggle');
+      } else if ($('#sliding td.sliding-toggle').length < 2) {
+        $(evt.currentTarget).addClass('sliding-toggle');
+      } else {
+        this.errorMsg('Can only slide two cells');
+      }
+    });
+
+    $('#sliding-btn').on('click', async () => {
+      const pos = [];
+      $('#sliding td.sliding-toggle').each((_, e) => {
+        pos.push(StrategyDisplay.getCoordsFromCellClickEvent(e.className));
+      });
+      if (pos.length !== 2) {
+        this.errorMsg('Must choose two cells');
+      } else {
+        const [idx1, idx2] =
+          pos[0][0] === pos[1][0] ? [pos[0][1], pos[1][1]] : pos[0][0] === pos[1][0];
+        const res = await sliding(this.tiling.tilingJson, idx1, idx2);
+        this.handleResponse(res);
+      }
+    });
+  }
+
   // #endregion
 }
 
