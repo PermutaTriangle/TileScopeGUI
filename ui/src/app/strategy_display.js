@@ -12,10 +12,12 @@ import {
   fusion,
   obstructionTransivity,
   sliding,
+  symmetries,
+  rearrangeAssumption,
 } from '../consumers/service';
 import { accordionItem } from '../utils/dom_utils';
 import { boxedArrowN, boxedArrowW, boxedArrowS, boxedArrowE } from './svgs';
-import { directionStringToNumber } from '../utils/permuta_utils';
+import { directionStringToNumber, allSymmetries } from '../utils/permuta_utils';
 
 import '../utils/typedefs';
 
@@ -135,8 +137,10 @@ class StrategyDisplay {
     this.addCellInsertionUI(getId());
     this.addReqPlacementUI(getId());
     this.addSlidingUI(getId());
-    this.addAssumptionUI(getId());
     this.addFusionUi(getId());
+    this.addAssumptionUI(getId());
+    this.addRearrangeAssumptionUI(getId());
+    this.addSymmetryUI(getId());
   }
 
   // #region Obstruction transivity
@@ -348,7 +352,7 @@ class StrategyDisplay {
   // #region Sliding
 
   addSlidingUI(acId) {
-    const btn = `<button id="sliding-btn">Add assumption</button>`;
+    const btn = `<button id="sliding-btn">Slide</button>`;
     const content = `<div id="sliding" class="cell-hoverable">${this.plotDiv}</div>${btn}`;
     this.parentDom.append(accordionItem(acId, 'Sliding', content));
     $('#sliding td.non-empty-cell').on('click', (evt) => {
@@ -366,14 +370,48 @@ class StrategyDisplay {
       $('#sliding td.sliding-toggle').each((_, e) => {
         pos.push(StrategyDisplay.getCoordsFromCellClickEvent(e.className));
       });
+      console.log(pos);
       if (pos.length !== 2) {
         this.errorMsg('Must choose two cells');
       } else {
         const [idx1, idx2] =
-          pos[0][0] === pos[1][0] ? [pos[0][1], pos[1][1]] : pos[0][0] === pos[1][0];
+          pos[0][0] === pos[1][0] ? [pos[0][1], pos[1][1]] : [pos[0][0], pos[1][0]];
         const res = await sliding(this.tiling.tilingJson, idx1, idx2);
         this.handleResponse(res);
       }
+    });
+  }
+
+  // #endregion
+
+  // #region Symmetries
+
+  addSymmetryUI(acId) {
+    const syms = allSymmetries();
+    const content = `<div>${syms
+      .map(([title, sType]) => `<button id="symmetry-btn-${sType}">${title}</button>`)
+      .join('')}</div>`;
+    this.parentDom.append(accordionItem(acId, 'Symmetries', content));
+
+    syms.forEach(([, id]) => {
+      $(`#symmetry-btn-${id}`).on('click', async (evt) => {
+        const symType = parseInt(evt.currentTarget.id.slice(-1), 10);
+        const res = await symmetries(this.tiling.tilingJson, symType);
+        this.handleResponse(res);
+      });
+    });
+  }
+
+  // #endregion
+
+  // #region Rearrange Assumption
+
+  addRearrangeAssumptionUI(acId) {
+    const content = `<button id="rearrassump">Rearrange Assumption</button>`;
+    this.parentDom.append(accordionItem(acId, 'Rearrange Assumption', content));
+    $('#rearrassump').on('click', async () => {
+      const res = await rearrangeAssumption(this.tiling.tilingJson);
+      this.handleResponse(res);
     });
   }
 

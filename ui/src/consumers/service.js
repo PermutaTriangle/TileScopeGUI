@@ -109,6 +109,25 @@ const fusion = async (tilingJson, idx, row) =>
 const sliding = async (tilingJson, idx1, idx2) =>
   apiPost('/strategies/sliding', { tiling: tilingJson, idx1, idx2 });
 
+/**
+ * An endpoint for symmetry given a tiling.
+ *
+ * @param {TilingJson} tilingJson
+ * @param {number} symType
+ * @returns {RuleResponsePromise} promise with rule
+ */
+const symmetries = async (tilingJson, symType) =>
+  apiPost('/strategies/symmetry', { tiling: tilingJson, symmetry: symType });
+
+/**
+ * An endpoint for rearrange assumption given a tiling.
+ *
+ * @param {TilingJson} tilingJson
+ * @returns {RuleResponsePromise} promise with rule
+ */
+const rearrangeAssumption = async (tilingJson) =>
+  apiPost('/strategies/rearrangeassumption', tilingJson);
+
 export {
   getTiling,
   rowColPlacement,
@@ -120,4 +139,6 @@ export {
   fusion,
   obstructionTransivity,
   sliding,
+  symmetries,
+  rearrangeAssumption,
 };

@@ -36,4 +36,19 @@ const directionNumberToString = (dir) => {
   }
 };
 
-export { directionNumberToString, directionStringToNumber };
+/**
+ * Get all symmetry names and their ids.
+ *
+ * @returns {Array.<Array<string|number>>} Names and id
+ */
+const allSymmetries = () => [
+  ['Rotate 90', 1],
+  ['Rotate 180', 2],
+  ['Rotate 270', 3],
+  ['Vertical flip', 4],
+  ['Horizontal flip', 5],
+  ['Diagonal flip', 6],
+  ['Antidiagonal flip', 7],
+];
+
+export { directionNumberToString, directionStringToNumber, allSymmetries };

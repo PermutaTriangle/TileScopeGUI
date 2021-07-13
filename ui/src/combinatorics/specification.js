@@ -11,13 +11,33 @@ class Specification {
    * @param {TilingInterface} initialTiling
    */
   constructor(initialTiling) {
-    /** @type {TilingInterface[]} */
-    this.tilings = [initialTiling];
+    /** @type {Object.<number, TilingInterface>} */
+    this.tilings = { 0: initialTiling };
     /** @type {Object.<string,number>} */
     this.tilingIndex = {};
     this.tilingIndex[initialTiling.key] = 0;
-    /** @type {Array.<null|RuleWithoutTilings>} */
-    this.rules = [null];
+    /** @type {Object.<number, RuleWithoutTilings>} */
+    this.rules = {};
+  }
+
+  /**
+   * Number of unique tilings in the specification.
+   *
+   * @returns {int} tiling count
+   */
+  numberOfTilings() {
+    return Object.keys(this.tilings).length;
+  }
+
+  /**
+   * Create an integer key.
+   *
+   * @returns {number} next key to use.
+   */
+  getNextKey() {
+    let nxt = this.numberOfTilings();
+    while (nxt in this.tilings) nxt -= 1;
+    return nxt;
   }
 
   /**
@@ -58,7 +78,7 @@ class Specification {
    * @return {null|RuleWithoutTilings} rule who's LHS has given id
    */
   getRuleByLHS(id) {
-    return this.rules[id];
+    return this.rules[id] || null;
   }
 
   /**
@@ -68,7 +88,7 @@ class Specification {
    * @returns {boolean} true iff tiling with id has children
    */
   hasChildren(id) {
-    return this.rules[id] !== null;
+    return id in this.rules;
   }
 
   /**
@@ -88,11 +108,29 @@ class Specification {
    * @returns {number} id of new tiling
    */
   addNewClass(tiling) {
-    const idx = this.tilings.length;
+    const idx = this.getNextKey();
     this.tilingIndex[tiling.key] = idx;
-    this.tilings.push(tiling);
-    this.rules.push(null);
+    this.tilings[idx] = tiling;
     return idx;
+  }
+
+  /**
+   * Check if adding child to parent causes tautology.
+   *
+   * @param {number} parentId
+   * @param {string} childKey
+   * @returns {boolean} true iff adding child to parent causes tautology
+   */
+  tautologyCheck(parentId, childKey) {
+    const idx = this.indexOfKey(childKey);
+    if (idx === -1) return false;
+    if (idx === parentId) return true;
+    let rule = this.getRuleByLHS(idx);
+    while (rule !== null && rule.children.length === 1) {
+      if (rule.children[0] === parentId) return true;
+      rule = this.getRuleByLHS(rule.children[0]);
+    }
+    return false;
   }
 
   /**

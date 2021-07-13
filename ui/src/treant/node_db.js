@@ -66,6 +66,26 @@ class NodeDB {
   }
 
   /**
+   * Number of nodes in the db.
+   *
+   * @returns {int} node count
+   */
+  numberOfNodes() {
+    return Object.keys(this.db).length;
+  }
+
+  /**
+   * Create an integer key.
+   *
+   * @returns {number} next key to use.
+   */
+  getNextKey() {
+    let nxt = this.numberOfNodes();
+    while (nxt in this.db) nxt -= 1;
+    return nxt;
+  }
+
+  /**
    * @param {Tree} tree
    * @returns {NodeDB}
    */

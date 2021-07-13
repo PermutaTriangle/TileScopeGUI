@@ -2,6 +2,7 @@ import itertools
 from typing import TYPE_CHECKING, Iterable, List, Tuple, TypeVar
 
 from comb_spec_searcher.exception import StrategyDoesNotApply
+from comb_spec_searcher.strategies.rule import Rule
 from flask import Blueprint, request
 from permuta.patterns.perm import Perm
 from tilings.assumptions import TrackingAssumption
@@ -10,10 +11,20 @@ from tilings.strategies import FactorFactory, RowAndColumnPlacementFactory
 from tilings.strategies.assumption_insertion import AddAssumptionsStrategy
 from tilings.strategies.fusion import FusionStrategy
 from tilings.strategies.obstruction_inferral import ObstructionTransitivityFactory
+from tilings.strategies.rearrange_assumption import RearrangeAssumptionFactory
 from tilings.strategies.requirement_insertion import RequirementInsertionStrategy
 from tilings.strategies.requirement_placement import RequirementPlacementStrategy
 from tilings.strategies.row_and_col_separation import RowColumnSeparationStrategy
 from tilings.strategies.sliding import SlidingFactory, SlidingStrategy
+from tilings.strategies.symmetry import (
+    TilingAntidiagonal,
+    TilingComplement,
+    TilingInverse,
+    TilingReverse,
+    TilingRotate90,
+    TilingRotate180,
+    TilingRotate270,
+)
 from tilings.tiling import Tiling
 from werkzeug.exceptions import BadRequest
 
@@ -264,7 +275,7 @@ def _fusion_input() -> Tuple[Tiling, int, bool]:
 def fusion() -> dict:
     """Apply fusion strategy to given tiling."""
     tiling, idx, row = _fusion_input()
-    arguments = (idx, None) if row else (None, idx)
+    arguments = (idx, None, True) if row else (None, idx, True)
     try:
         rule = FusionStrategy(*arguments)(tiling)
     except StrategyDoesNotApply as exc:
@@ -317,4 +328,46 @@ def sliding() -> dict:
             rule.strategy.symmetry_type
         ]:
             return rule_as_json(rule)
+    raise BadRequest()
+
+
+def _get_symmetry_input() -> Tuple[Tiling, int]:
+    data = _get_request_json()
+    try:
+        tiling: Tiling = Tiling.from_dict(data["tiling"])
+        sym_type: int = data["symmetry"]
+    except (TypeError, KeyError, ValueError) as exc:
+        raise BadRequest() from exc
+    if not isinstance(sym_type, int) or not (0 < sym_type < 8):
+        raise BadRequest()
+    return tiling, sym_type
+
+
+@strategies_blueprint.route("/symmetry", methods=["POST"])
+def symmetry() -> dict:
+    """Apply symmetry strategy to given tiling."""
+    tiling, sym_type = _get_symmetry_input()
+    symstrat = {
+        1: TilingRotate90(),
+        2: TilingRotate180(),
+        3: TilingRotate270(),
+        4: TilingReverse(),
+        5: TilingComplement(),
+        6: TilingInverse(),
+        7: TilingAntidiagonal(),
+    }[sym_type]
+    rule: Rule = symstrat(tiling)
+    if rule.children[0] == tiling:
+        raise BadRequest()
+    return rule_as_json(rule)
+
+
+@strategies_blueprint.route("/rearrangeassumption", methods=["POST"])
+def rearrange_assumption():
+    """Apply rearrange assumption strategy to given tiling."""
+    tiling = _get_tiling_input()
+    print(tiling)
+    for strat in RearrangeAssumptionFactory()(tiling):
+        rule = strat(tiling)
+        return rule_as_json(rule)
     raise BadRequest()

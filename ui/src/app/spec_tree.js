@@ -1,6 +1,7 @@
 import $ from 'jquery';
 
-import './styles/spec_tree.scss';
+import * as bootstrap from 'bootstrap';
+
 import Tiling from '../combinatorics/tiling';
 import Specification from '../combinatorics/specification';
 import Treant from '../treant/treant';
@@ -9,6 +10,7 @@ import Modal from './modal';
 
 import '../utils/typedefs';
 
+import './styles/spec_tree.scss';
 /**
  * A component for the specification tree.
  */
@@ -28,6 +30,28 @@ class SpecTree {
   }
 
   /**
+   * Create a modal for viewing rule.
+   *
+   * @param {string} formalStep
+   * @returns {string} raw HTML string
+   */
+  static ruleNodeModalHtml(formalStep) {
+    return `<div id="rule-modal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-body">
+              <p>${formalStep}</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button id="rem-rule" type="button" class="btn btn-danger">Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /**
    * Raw HTML for a node that is added to Treant.
    *
    * @param {TilingInterface} tiling
@@ -36,10 +60,11 @@ class SpecTree {
    * @param {boolean} [duplicate] defaults to false
    * @returns {string} raw HTML string
    */
-  static nodeHtml(tiling, label, nodeId, duplicate = false) {
+  static nodeHtml(tiling, label, nodeId, duplicate = false, expanded = false) {
     let additionalClasses = '';
     if (tiling.isVerified()) additionalClasses = ' spec-node-verified';
     else if (duplicate) additionalClasses = ' spec-node-duplicate';
+    else if (!expanded) additionalClasses = ' spec-node-todo';
     return `<div id="spec-node-${nodeId}" class="spec-node-container${additionalClasses}">
       <div class="spec-node-label">${label}</div>
       <div class="spec-node">
@@ -84,7 +109,7 @@ class SpecTree {
   static initConfig(root) {
     return {
       nodeStructure: {
-        innerHTML: SpecTree.nodeHtml(root, 1, 0),
+        innerHTML: SpecTree.nodeHtml(root, 0, 0),
         collapsable: false,
         collapsed: false,
       },
@@ -141,6 +166,16 @@ class SpecTree {
   }
 
   /**
+   * Remove the rule who's LHS has given id.
+   *
+   * @param {number} classId
+   */
+  removeRuleOfClass(classId) {
+    console.log(classId);
+    this.errorDisplay.notImplemented();
+  }
+
+  /**
    * Set click event for a new tiling node.
    *
    * @param {number} nodeId
@@ -181,39 +216,98 @@ class SpecTree {
    * @param {Rule} rule
    */
   addRule(nodeId, rule) {
+    // Get class id
     const classId = this.nodeIdToClassId[nodeId];
+
+    // Check if tautology
+    if (rule.children.length === 1 && this.spec.tautologyCheck(classId, rule.children[0].key)) {
+      this.errorDisplay.alert('Rule creates a tautology!');
+      return;
+    }
+
+    // Add rule to spec
     const newClasses = this.spec.addRule(classId, rule);
     const children = this.spec.getChildren(classId);
     const nodeParents = this.classIdToNodeIds[classId];
 
+    // Not unverified any more
     this.unverifiedLeaves.delete(this.spec.getClassById(classId).key);
 
-    // Color duplicates
+    // Update colors of duplicates
     nodeParents.forEach((parentId) => {
+      $(`#spec-node-${parentId}`).removeClass('spec-node-todo');
       if (parentId !== nodeId) {
         $(`#spec-node-${parentId}`).addClass('spec-node-duplicate');
       }
     });
 
     // Add rule node
+    const parent = this.addRuleNode(nodeId, classId, children.length, rule);
+
+    // Add child nodes
+    this.addChildNodes(children, newClasses, parent);
+
+    // Check if spec
+    if (this.hasSpecification()) this.errorDisplay.alert('Specification!', true);
+  }
+
+  /**
+   * Add a treant node for the rule.
+   *
+   * @param {number} nodeId
+   * @param {number} classId
+   * @param {number} numberOfChildren
+   * @param {Rule} rule
+   * @returns {number} node Id of rule node
+   */
+  addRuleNode(nodeId, classId, numberOfChildren, rule) {
     let parent = this.treant.getNode(nodeId);
-    let newNodeId = this.treant.getNodeCount();
-    const op = children.length === 1 && rule.op === '+' ? '≅' : rule.op;
+    const newNodeId = this.treant.getNodeCount();
+    const op = numberOfChildren === 1 && rule.op === '+' ? '≅' : rule.op;
     parent = this.treant.add(parent, {
       innerHTML: SpecTree.ruleNodeHtml(op, newNodeId),
       collapsable: false,
       collapsed: false,
     });
     this.nodeIdToClassId.push(classId);
+    $(`#spec-node-${newNodeId}`).on('click', (evt) => {
+      // TODO: confirm popup? toggle if unwanted...
+      const parentOfRule = this.nodeIdToClassId[parseInt(evt.currentTarget.id.match(/\d+/)[0], 10)];
+      const modalRule = this.spec.getRuleByLHS(parentOfRule);
+      $('body').append(SpecTree.ruleNodeModalHtml(modalRule.formalStep));
 
-    // Add child nodes
+      const modal = new bootstrap.Modal('#rule-modal');
+      modal.show();
+
+      // TODO: For some reason, hidden.bs.modal isn't working. Temp solution.
+      $('body > div.modal-backdrop.show').on('DOMNodeRemoved', () => {
+        $('#rule-modal').remove();
+      });
+
+      $('#rem-rule').on('click', () => {
+        this.removeRuleOfClass(parentOfRule);
+        modal.hide();
+      });
+    });
+
+    return parent;
+  }
+
+  /**
+   * Draw children when adding rule.
+   *
+   * @param {number[]} children
+   * @param {boolean[]} newClasses
+   * @param {number} parent
+   */
+  addChildNodes(children, newClasses, parent) {
+    let newNodeId = this.treant.getNodeCount();
     children.forEach((childId, idx) => {
-      newNodeId += 1;
       const dup = !newClasses[idx] && this.spec.hasChildren(childId);
       const childTiling = this.spec.getClassById(childId);
       if (!dup && !childTiling.isVerified()) this.unverifiedLeaves.add(childTiling.key);
       this.treant.add(parent, {
-        innerHTML: SpecTree.nodeHtml(childTiling, childId + 1, newNodeId, dup),
+        innerHTML: SpecTree.nodeHtml(childTiling, childId, newNodeId, dup),
         collapsable: false,
         collapsed: false,
       });
@@ -221,9 +315,8 @@ class SpecTree {
       while (this.classIdToNodeIds.length <= childId) this.classIdToNodeIds.push([]);
       this.classIdToNodeIds[childId].push(newNodeId);
       this.setClickEventForNode(newNodeId);
+      newNodeId += 1;
     });
-
-    if (this.hasSpecification()) this.errorDisplay.alert('Specification!', true);
   }
 
   /**
