@@ -176,10 +176,14 @@ class StrategyDisplay {
   // #region Factor
 
   addFactorUI(acId) {
-    const content = `<button id="factor">Factor</button>`;
+    const content = `<div><button id="factor">Factor</button><button id="factorint">Interleaving</button></div>`;
     this.parentDom.append(accordionItem(acId, 'Factor', content));
     $('#factor').on('click', async () => {
       const res = await factor(this.tiling.tilingJson);
+      this.handleResponse(res);
+    });
+    $('#factorint').on('click', async () => {
+      const res = await factor(this.tiling.tilingJson, true);
       this.handleResponse(res);
     });
   }
@@ -370,7 +374,6 @@ class StrategyDisplay {
       $('#sliding td.sliding-toggle').each((_, e) => {
         pos.push(StrategyDisplay.getCoordsFromCellClickEvent(e.className));
       });
-      console.log(pos);
       if (pos.length !== 2) {
         this.errorMsg('Must choose two cells');
       } else {

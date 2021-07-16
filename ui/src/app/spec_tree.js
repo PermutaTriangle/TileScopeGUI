@@ -264,7 +264,6 @@ class SpecTree {
 
     // Delete every desentant of nodeId
     this.treant.removeAllDescendantOf(nodeId, (nId) => {
-      console.log(nId);
       const cId = this.nodeIdToClassId[nId];
       if (cId in this.classIdToNodeIds) {
         this.classIdToNodeIds[cId].delete(nId);
@@ -330,7 +329,6 @@ class SpecTree {
    * @param {Rule} rule
    */
   addRule(nodeId, rule) {
-    console.log(rule);
     // Get class id
     const classId = this.nodeIdToClassId[nodeId];
 

@@ -126,7 +126,6 @@ class App {
    * Import an existing session.
    */
   import() {
-    console.log(this.specTree.spec);
     this.errorDisplay.notImplemented();
   }
 }
