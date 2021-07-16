@@ -7,6 +7,7 @@ import Specification from '../combinatorics/specification';
 import Treant from '../treant/treant';
 import Rule from '../combinatorics/rule';
 import Modal from './modal';
+import Queue from '../containers/queue';
 
 import '../utils/typedefs';
 
@@ -139,10 +140,11 @@ class SpecTree {
     this.spec = new Specification(root);
     /** @type {Treant} */
     this.treant = new Treant(SpecTree.initConfig(this.spec.getRoot()));
-    /** @type {number[]} */
-    this.nodeIdToClassId = [0];
-    /** @type {number[][]} */
-    this.classIdToNodeIds = [[0]];
+
+    /** @type {Object.<number,number>} */
+    this.nodeIdToClassId = { 0: 0 };
+    /** @type {Object.<number, Set<number>>} */
+    this.classIdToNodeIds = { 0: new Set([0]) };
 
     this.setClickEventForNode(0);
   }
@@ -165,14 +167,114 @@ class SpecTree {
     return this.spec.getRoot();
   }
 
+  moveNodesThatCanBeMoved(nodeId, children) {
+    const { classToAlternative, counter } = this.classAlternatives(nodeId);
+    let moved = true;
+
+    while (moved) {
+      const queue = new Queue(this.treant.numberOfNodes());
+      children.forEach((c) => {
+        queue.enqueue(c);
+      });
+      moved = false;
+      while (!queue.isEmpty()) {
+        const currNodeId = queue.dequeue();
+        const currClassId = this.nodeIdToClassId[currNodeId];
+        const currChildren = this.nodeChildren(currNodeId);
+        if (currChildren.length > 0) {
+          if (currClassId in classToAlternative) {
+            const altNodeId = classToAlternative[currClassId];
+            if (currChildren.length > 0) {
+              moved = true;
+              this.treant.moveChildren(currNodeId, altNodeId, false);
+              $(`#spec-node-{altNodeId}`).removeClass('spec-node-duplicate');
+              const stack = [...this.nodeChildren(currNodeId)];
+              while (stack.length > 0) {
+                const currChild = stack.pop();
+                const currChildChildren = this.nodeChildren(currChild);
+                if (currChildChildren.length === 0) {
+                  const currChildClassId = this.nodeIdToClassId[currChild];
+                  if (!(currChildClassId in classToAlternative)) {
+                    classToAlternative[currChildClassId] = currChild;
+                  }
+                } else {
+                  currChildChildren.forEach((cc) => {
+                    stack.push(cc);
+                  });
+                }
+              }
+            }
+          } else {
+            currChildren.forEach((c) => {
+              queue.enqueue(c);
+            });
+          }
+        }
+      }
+    }
+  }
+
+  classAlternatives(parentOfRuleToRemove) {
+    let counter = 0;
+    const classToAlternative = {};
+    const queue = new Queue();
+    queue.enqueue(0);
+    while (!queue.isEmpty()) {
+      const curr = queue.dequeue();
+      if (curr !== parentOfRuleToRemove) {
+        counter += 1;
+        const classId = this.nodeIdToClassId[curr];
+        if (!(classId in classToAlternative)) {
+          const children = this.nodeChildren(curr);
+          if (children.length === 0) {
+            classToAlternative[classId] = curr;
+          } else {
+            children.forEach((c) => {
+              queue.enqueue(c);
+            });
+          }
+        }
+      }
+    }
+    return { classToAlternative, counter };
+  }
+
   /**
    * Remove the rule who's LHS has given id.
    *
    * @param {number} classId
    */
-  removeRuleOfClass(classId) {
-    console.log(classId);
-    this.errorDisplay.notImplemented();
+  removeRuleFromNode(nodeId) {
+    const classId = this.nodeIdToClassId[nodeId];
+    const children = this.nodeChildren(nodeId);
+
+    // Update complete-spec tracker
+    this.unverifiedLeaves.add(classId);
+
+    // Update colors of nodes
+    this.classIdToNodeIds[classId].forEach((nId) => {
+      $(`#spec-node-${nId}`).addClass('spec-node-todo').removeClass('spec-node-duplicate');
+    });
+
+    // Update spec object
+    this.spec.removeRule(classId);
+
+    // Move the parts that can be moved
+    this.moveNodesThatCanBeMoved(nodeId, children);
+
+    // Delete every desentant of nodeId
+    this.treant.removeAllDescendantOf(nodeId, (nId) => {
+      console.log(nId);
+      const cId = this.nodeIdToClassId[nId];
+      if (cId in this.classIdToNodeIds) {
+        this.classIdToNodeIds[cId].delete(nId);
+        if (this.classIdToNodeIds[cId].size === 0) {
+          delete this.classIdToNodeIds[cId];
+          this.spec.removeClass(cId);
+        }
+      }
+      delete this.nodeIdToClassId[nId];
+    });
   }
 
   /**
@@ -210,12 +312,25 @@ class SpecTree {
   }
 
   /**
+   * Get node id of children (not the rule but classes).
+   *
+   * @param {number} nodeId
+   * @returns {number[]} node ids of children
+   */
+  nodeChildren(nodeId) {
+    const node = this.treant.getNode(nodeId);
+    if (node.children.length === 0) return [];
+    return this.treant.getNode(node.children[0]).children;
+  }
+
+  /**
    * Add a rule and update spec.
    *
    * @param {number} nodeId
    * @param {Rule} rule
    */
   addRule(nodeId, rule) {
+    console.log(rule);
     // Get class id
     const classId = this.nodeIdToClassId[nodeId];
 
@@ -261,17 +376,16 @@ class SpecTree {
    * @returns {number} node Id of rule node
    */
   addRuleNode(nodeId, classId, numberOfChildren, rule) {
-    let parent = this.treant.getNode(nodeId);
-    const newNodeId = this.treant.getNodeCount();
+    const parentNode = this.treant.getNode(nodeId);
+    const newNodeId = this.treant.getNextKey();
     const op = numberOfChildren === 1 && rule.op === '+' ? '≅' : rule.op;
-    parent = this.treant.add(parent, {
+    const ruleNode = this.treant.add(parentNode, {
       innerHTML: SpecTree.ruleNodeHtml(op, newNodeId),
       collapsable: false,
       collapsed: false,
     });
-    this.nodeIdToClassId.push(classId);
+    this.nodeIdToClassId[newNodeId] = classId;
     $(`#spec-node-${newNodeId}`).on('click', (evt) => {
-      // TODO: confirm popup? toggle if unwanted...
       const parentOfRule = this.nodeIdToClassId[parseInt(evt.currentTarget.id.match(/\d+/)[0], 10)];
       const modalRule = this.spec.getRuleByLHS(parentOfRule);
       $('body').append(SpecTree.ruleNodeModalHtml(modalRule.formalStep));
@@ -285,12 +399,12 @@ class SpecTree {
       });
 
       $('#rem-rule').on('click', () => {
-        this.removeRuleOfClass(parentOfRule);
+        this.removeRuleFromNode(parentNode.id);
         modal.hide();
       });
     });
 
-    return parent;
+    return ruleNode;
   }
 
   /**
@@ -301,7 +415,7 @@ class SpecTree {
    * @param {number} parent
    */
   addChildNodes(children, newClasses, parent) {
-    let newNodeId = this.treant.getNodeCount();
+    let newNodeId = this.treant.getNextKey();
     children.forEach((childId, idx) => {
       const dup = !newClasses[idx] && this.spec.hasChildren(childId);
       const childTiling = this.spec.getClassById(childId);
@@ -311,9 +425,10 @@ class SpecTree {
         collapsable: false,
         collapsed: false,
       });
-      this.nodeIdToClassId.push(childId);
-      while (this.classIdToNodeIds.length <= childId) this.classIdToNodeIds.push([]);
-      this.classIdToNodeIds[childId].push(newNodeId);
+
+      this.nodeIdToClassId[newNodeId] = childId;
+      if (!(childId in this.classIdToNodeIds)) this.classIdToNodeIds[childId] = new Set();
+      this.classIdToNodeIds[childId].add(newNodeId);
       this.setClickEventForNode(newNodeId);
       newNodeId += 1;
     });

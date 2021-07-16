@@ -29,9 +29,11 @@ const rowColPlacement = async (tilingJson, dir, row, idx) =>
  *
  * @async
  * @param {TilingJson} tilingJson
+ * @param {boolean} interleaving
  * @returns {RuleResponsePromise} promise with rule
  */
-const factor = async (tilingJson) => apiPost('/strategies/factor', tilingJson);
+const factor = async (tilingJson, interleaving = false) =>
+  apiPost(`/strategies/factor${interleaving ? '?interleaving=all' : ''}`, tilingJson);
 
 /**
  * An endpoint for getting a cell insertion rule given a tiling.

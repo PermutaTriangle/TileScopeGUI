@@ -51,4 +51,12 @@ const allSymmetries = () => [
   ['Antidiagonal flip', 7],
 ];
 
-export { directionNumberToString, directionStringToNumber, allSymmetries };
+/**
+ * Check if op is equiv op.
+ *
+ * @param {str} op
+ * @returns true if equiv
+ */
+const isEquivOp = (op) => op === '≅';
+
+export { directionNumberToString, directionStringToNumber, allSymmetries, isEquivOp };

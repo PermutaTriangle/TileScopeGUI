@@ -24,7 +24,9 @@ class Rule {
     /** @type {object} */
     this.strategy = jsonObject.strategy;
     /** @type {string} */
-    this.op = jsonObject.op;
+    this.op = this.children.length === 1 && jsonObject.op === '+' ? '≅' : jsonObject.op;
+    /** @type {undefined|object} */
+    this.originalRule = 'original_rule' in jsonObject ? jsonObject.original_rule : undefined;
   }
 
   /**
@@ -35,11 +37,13 @@ class Rule {
    */
   withoutTilings(childrenIds) {
     return {
+      op: this.op,
       formalStep: this.formalStep,
       ruleClass: this.ruleClass,
       classModule: this.classModule,
       strategy: this.strategy,
       children: childrenIds,
+      originalRule: this.originalRule,
     };
   }
 }

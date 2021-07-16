@@ -1,3 +1,4 @@
+import { isEquivOp } from '../utils/permuta_utils';
 import '../utils/typedefs';
 
 /**
@@ -18,6 +19,29 @@ class Specification {
     this.tilingIndex[initialTiling.key] = 0;
     /** @type {Object.<number, RuleWithoutTilings>} */
     this.rules = {};
+  }
+
+  /**
+   * Remove rule from specification.
+   *
+   * @param {number} id
+   */
+  removeRule(id) {
+    delete this.rules[id];
+  }
+
+  /**
+   * Remove class from specification. This will
+   * also remove the rule whose LHS is the class
+   * if any.
+   *
+   * @param {number} id
+   */
+  removeClass(id) {
+    const tiling = this.tilings[id];
+    delete this.tilingIndex[tiling.key];
+    delete this.rules[id];
+    delete this.tilings[id];
   }
 
   /**
@@ -157,6 +181,84 @@ class Specification {
     });
     this.rules[parent] = rule.withoutTilings(array);
     return newClasses;
+  }
+
+  toSpecificationJson() {
+    return {
+      root: this.tilings[0].tilingJson,
+      rules: this.#getJsonableRules(),
+    };
+  }
+
+  /**
+   *
+   */
+  #getJsonableRules() {
+    const rules = [];
+    const visited = new Set([0]);
+    const stack = [0];
+    while (stack.length > 0) {
+      const curr = stack.pop();
+      const currTiling = this.tilings[curr];
+      if (this.hasChildren(curr)) {
+        this.#jsonExpand(curr, currTiling, visited, stack, rules);
+      } else if (currTiling.isVerified()) {
+        const rule = { ...currTiling.verified };
+        delete rule.formal_step;
+        rules.push(rule);
+      }
+    }
+    return rules;
+  }
+
+  #jsonExpand(curr, currTiling, visited, stack, rules) {
+    const rule = this.rules[curr];
+    if (isEquivOp(rule.op)) {
+      rules.push({
+        class_module: 'comb_spec_searcher.strategies.rule',
+        rule_class: 'EquivalencePathRule',
+        rules: this.#gatherEquivRules(currTiling, rule, visited, stack),
+      });
+    } else {
+      rule.children.forEach((c) => {
+        if (!visited.has(c)) {
+          visited.add(c);
+          stack.push(c);
+        }
+      });
+      rules.push(this.#ruleToJsonable(rule, currTiling));
+    }
+  }
+
+  #ruleToJsonable(rule, currTiling) {
+    const ruleObj = {
+      class_module: rule.classModule,
+      rule_class: rule.ruleClass,
+      comb_class: currTiling.tilingJson,
+      children: rule.children.map((c) => this.tilings[c].tilingJson),
+      strategy: rule.strategy,
+    };
+    if (rule.originalRule !== undefined) {
+      ruleObj.original_rule = rule.originalRule;
+      delete ruleObj.comb_class;
+      delete ruleObj.children;
+      delete ruleObj.strategy;
+    }
+    return ruleObj;
+  }
+
+  #gatherEquivRules(currTiling, rule, visited, stack) {
+    const rules = [this.#ruleToJsonable(rule, currTiling)];
+    let nxt = rule.children[0];
+    let nxtRule = this.rules[nxt];
+    while (this.hasChildren(nxt) && isEquivOp(nxtRule.op)) {
+      rules.push(this.#ruleToJsonable(nxtRule, this.tilings[nxt]));
+      [nxt] = nxtRule.children;
+      nxtRule = this.rules[nxt];
+    }
+    visited.add(nxt);
+    stack.push(nxt);
+    return rules;
   }
 }
 

@@ -6,6 +6,7 @@ from comb_spec_searcher.strategies.rule import Rule
 from flask import Blueprint, request
 from permuta.patterns.perm import Perm
 from tilings.assumptions import TrackingAssumption
+from tilings.exception import InvalidOperationError
 from tilings.griddedperm import GriddedPerm
 from tilings.strategies import FactorFactory, RowAndColumnPlacementFactory
 from tilings.strategies.assumption_insertion import AddAssumptionsStrategy
@@ -67,8 +68,12 @@ def _get_tiling_input() -> Tiling:
 @strategies_blueprint.route("/factor", methods=["POST"])
 def factor() -> dict:
     """Apply factor strategy to given tiling."""
+    interleaving = request.args.get("interleaving", None)
     tiling = _get_tiling_input()
-    strats = FactorFactory()(tiling)
+    try:
+        strats = FactorFactory(interleaving=interleaving)(tiling)
+    except InvalidOperationError as exc:
+        raise BadRequest() from exc
     strat = _first_or_bad(strats)
     rule = strat(tiling)
     return rule_as_json(rule)
@@ -106,11 +111,15 @@ def row_col_placement() -> dict:
         assert isinstance(rule.strategy, RequirementPlacementStrategy)
         if row and rule.strategy.gps[0].pos[0][1] == idx:
             if len(rule.non_empty_children()) == 1:
-                return rule_as_json(rule.to_equivalence_rule())
+                rule_json = rule_as_json(rule.to_equivalence_rule())
+                rule_json["original_rule"] = rule.to_jsonable()
+                return rule_json
             return rule_as_json(rule)
         if not row and rule.strategy.gps[0].pos[0][0] == idx:
             if len(rule.non_empty_children()) == 1:
-                return rule_as_json(rule.to_equivalence_rule())
+                rule_json = rule_as_json(rule.to_equivalence_rule())
+                rule_json["original_rule"] = rule.to_jsonable()
+                return rule_json
             return rule_as_json(rule)
     raise BadRequest()
 
@@ -212,7 +221,9 @@ def requirement_placement() -> dict:
     ):
         raise BadRequest()
     if len(rule.non_empty_children()) == 1:
-        return rule_as_json(rule.to_equivalence_rule())
+        rule_json = rule_as_json(rule.to_equivalence_rule())
+        rule_json["original_rule"] = rule.to_jsonable()
+        return rule_json
     return rule_as_json(rule)
 
 

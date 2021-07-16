@@ -9,6 +9,7 @@ import AppState from './app_state';
 import '../utils/typedefs';
 
 import './styles/app.scss';
+import { downloadJson } from '../utils/dom_utils';
 
 /**
  * The main component. It keeps track of states.
@@ -114,6 +115,8 @@ class App {
   export() {
     if (!this.specTree) {
       this.errorDisplay.alert('Nothing to export');
+    } else if (this.specTree.hasSpecification()) {
+      downloadJson(this.specTree.spec.toSpecificationJson(), 'specification');
     } else {
       this.errorDisplay.notImplemented();
     }
@@ -123,6 +126,7 @@ class App {
    * Import an existing session.
    */
   import() {
+    console.log(this.specTree.spec);
     this.errorDisplay.notImplemented();
   }
 }

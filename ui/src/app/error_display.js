@@ -1,7 +1,7 @@
 import { Toast } from 'bootstrap';
 import $ from 'jquery';
 
-import { uuid } from '../utils/utils';
+import { uuid } from '../utils/dom_utils';
 
 import './styles/error_display.scss';
 

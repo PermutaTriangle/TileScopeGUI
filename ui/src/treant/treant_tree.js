@@ -364,16 +364,16 @@ class Tree {
     const negOffsetY = treeSize.y.min + deltaY <= 0 ? Math.abs(treeSize.y.min) : 0;
 
     // position all the nodes
-    for (let i = 0, len = this.nodeDB.db.length, node = this.nodeDB.get(i); i < len; i += 1) {
-      node = this.nodeDB.get(i);
-
+    Object.entries(this.nodeDB.db).forEach(([i, node]) => {
       self.cfg.callback.onBeforePositionNode.apply(self, [node, i, containerCenter, treeCenter]);
 
       if (node.id === 0 && this.cfg.hideRootNode) {
         self.cfg.callback.onAfterPositionNode.apply(self, [node, i, containerCenter, treeCenter]);
       } else {
         // if the tree is smaller than the draw area, then center the tree within drawing area
+        // eslint-disable-next-line no-param-reassign
         node.X += negOffsetX + (treeWidth < this.drawArea.clientWidth ? deltaX : this.cfg.padding);
+        // eslint-disable-next-line no-param-reassign
         node.Y +=
           negOffsetY + (treeHeight < this.drawArea.clientHeight ? deltaY : this.cfg.padding);
 
@@ -389,8 +389,11 @@ class Tree {
           node.show();
         } else {
           // inicijalno stvaranje nodeova, postavi lokaciju
+          // eslint-disable-next-line no-param-reassign
           node.nodeDOM.style.left = `${node.X}px`;
+          // eslint-disable-next-line no-param-reassign
           node.nodeDOM.style.top = `${node.Y}px`;
+          // eslint-disable-next-line no-param-reassign
           node.positioned = true;
         }
 
@@ -403,7 +406,7 @@ class Tree {
 
         self.cfg.callback.onAfterPositionNode.apply(self, [node, i, containerCenter, treeCenter]);
       }
-    }
+    });
   }
 
   /**

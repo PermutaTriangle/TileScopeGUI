@@ -9,7 +9,7 @@ class NodeDB {
    * @constructor
    */
   constructor(nodeStructure, tree) {
-    this.db = [];
+    this.db = {};
 
     const self = this;
 
@@ -66,6 +66,15 @@ class NodeDB {
   }
 
   /**
+   * Remove node from db by id.
+   *
+   * @param {number} id
+   */
+  deleteNode(id) {
+    delete this.db[id];
+  }
+
+  /**
    * Number of nodes in the db.
    *
    * @returns {int} node count
@@ -90,9 +99,9 @@ class NodeDB {
    * @returns {NodeDB}
    */
   createGeometries(tree) {
-    for (let i = this.db.length - 1; i >= 0; i -= 1) {
-      this.get(i).createGeometry(tree);
-    }
+    Object.entries(this.db).forEach(([, node]) => {
+      node.createGeometry(tree);
+    });
   }
 
   /**
@@ -108,9 +117,9 @@ class NodeDB {
    * @returns {NodeDB}
    */
   walk(callback) {
-    for (let i = this.db.length - 1; i >= 0; i -= 1) {
-      callback.apply(this, [this.get(i)]);
-    }
+    Object.entries(this.db).forEach(([, node]) => {
+      callback.apply(this, [node]);
+    });
   }
 
   /**
@@ -122,9 +131,10 @@ class NodeDB {
    * @returns {TreeNode}
    */
   createNode(nodeStructure, parentId, tree, stackParentId) {
-    const node = new TreeNode(nodeStructure, this.db.length, parentId, tree, stackParentId);
+    const nextId = this.getNextKey();
+    const node = new TreeNode(nodeStructure, nextId, parentId, tree, stackParentId);
 
-    this.db.push(node);
+    this.db[nextId] = node;
 
     // skip root node (0)
     if (parentId >= 0) {
