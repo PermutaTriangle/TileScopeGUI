@@ -168,7 +168,7 @@ class SpecTree {
   }
 
   moveNodesThatCanBeMoved(nodeId, children) {
-    const { classToAlternative, counter } = this.classAlternatives(nodeId);
+    const { classToAlternative } = this.classAlternatives(nodeId);
     let moved = true;
 
     while (moved) {

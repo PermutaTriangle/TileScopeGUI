@@ -349,7 +349,7 @@ def _get_symmetry_input() -> Tuple[Tiling, int]:
         sym_type: int = data["symmetry"]
     except (TypeError, KeyError, ValueError) as exc:
         raise BadRequest() from exc
-    if not isinstance(sym_type, int) or not (0 < sym_type < 8):
+    if not isinstance(sym_type, int) or not 0 < sym_type < 8:
         raise BadRequest()
     return tiling, sym_type
 
