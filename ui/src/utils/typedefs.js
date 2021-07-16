@@ -58,7 +58,7 @@
  * @typedef TilingInterface
  * @property {string} key
  * @property {TilingPlot} plot
- * @property {TilingJson} tiling
+ * @property {TilingJson} tilingJson
  * @property {null|VerificationStrategy} verified
  * @property {() => boolean} isVerified
  * @property {() => string} asciiHTML
@@ -73,6 +73,7 @@
  * @property {string} op
  * @property {string} rule_class
  * @property {object} strategy
+ * @property {object|undefined} original_rule
  */
 
 /**
@@ -81,11 +82,13 @@
 
 /**
  * @typedef RuleWithoutTilings
+ * @property {string} op
  * @property {string} formalStep
  * @property {string} ruleClass
  * @property {string} classModule
  * @property {object} strategy
  * @property {number[]} children
+ * @property {object|undefined} originalRule
  */
 
 /**
@@ -96,6 +99,7 @@
  * @property {string} classModule
  * @property {object} strategy
  * @property {string} op
+ * @property {object|undefined} originalRule
  * @property {(childrenIds: number[]) => RuleWithoutTilings} withoutTilings
  */
 

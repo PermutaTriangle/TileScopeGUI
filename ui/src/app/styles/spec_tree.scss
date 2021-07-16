@@ -23,7 +23,7 @@ svg {
   background-color: rgb(78, 145, 78);
 }
 
-.spec-node-verified > {
+.spec-node-verified {
   border-color: rgb(78, 145, 78);
   border: 2px;
 }
@@ -32,8 +32,17 @@ svg {
   background-color: rgb(80, 48, 168);
 }
 
-.spec-node-duplicate > {
+.spec-node-duplicate {
   border-color: rgb(80, 48, 168);
+  border: 2px;
+}
+
+.spec-node-todo > .spec-node-label {
+  background-color: orange;
+}
+
+.spec-node-todo {
+  border-color: orange;
   border: 2px;
 }
 

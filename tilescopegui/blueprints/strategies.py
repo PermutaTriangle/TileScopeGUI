@@ -2,16 +2,30 @@ import itertools
 from typing import TYPE_CHECKING, Iterable, List, Tuple, TypeVar
 
 from comb_spec_searcher.exception import StrategyDoesNotApply
+from comb_spec_searcher.strategies.rule import Rule
 from flask import Blueprint, request
 from permuta.patterns.perm import Perm
 from tilings.assumptions import TrackingAssumption
+from tilings.exception import InvalidOperationError
 from tilings.griddedperm import GriddedPerm
 from tilings.strategies import FactorFactory, RowAndColumnPlacementFactory
 from tilings.strategies.assumption_insertion import AddAssumptionsStrategy
 from tilings.strategies.fusion import FusionStrategy
+from tilings.strategies.obstruction_inferral import ObstructionTransitivityFactory
+from tilings.strategies.rearrange_assumption import RearrangeAssumptionFactory
 from tilings.strategies.requirement_insertion import RequirementInsertionStrategy
 from tilings.strategies.requirement_placement import RequirementPlacementStrategy
 from tilings.strategies.row_and_col_separation import RowColumnSeparationStrategy
+from tilings.strategies.sliding import SlidingFactory, SlidingStrategy
+from tilings.strategies.symmetry import (
+    TilingAntidiagonal,
+    TilingComplement,
+    TilingInverse,
+    TilingReverse,
+    TilingRotate90,
+    TilingRotate180,
+    TilingRotate270,
+)
 from tilings.tiling import Tiling
 from werkzeug.exceptions import BadRequest
 
@@ -54,8 +68,12 @@ def _get_tiling_input() -> Tiling:
 @strategies_blueprint.route("/factor", methods=["POST"])
 def factor() -> dict:
     """Apply factor strategy to given tiling."""
+    interleaving = request.args.get("interleaving", None)
     tiling = _get_tiling_input()
-    strats = FactorFactory()(tiling)
+    try:
+        strats = FactorFactory(interleaving=interleaving)(tiling)
+    except InvalidOperationError as exc:
+        raise BadRequest() from exc
     strat = _first_or_bad(strats)
     rule = strat(tiling)
     return rule_as_json(rule)
@@ -93,11 +111,15 @@ def row_col_placement() -> dict:
         assert isinstance(rule.strategy, RequirementPlacementStrategy)
         if row and rule.strategy.gps[0].pos[0][1] == idx:
             if len(rule.non_empty_children()) == 1:
-                return rule_as_json(rule.to_equivalence_rule())
+                rule_json = rule_as_json(rule.to_equivalence_rule())
+                rule_json["original_rule"] = rule.to_jsonable()
+                return rule_json
             return rule_as_json(rule)
         if not row and rule.strategy.gps[0].pos[0][0] == idx:
             if len(rule.non_empty_children()) == 1:
-                return rule_as_json(rule.to_equivalence_rule())
+                rule_json = rule_as_json(rule.to_equivalence_rule())
+                rule_json["original_rule"] = rule.to_jsonable()
+                return rule_json
             return rule_as_json(rule)
     raise BadRequest()
 
@@ -199,7 +221,9 @@ def requirement_placement() -> dict:
     ):
         raise BadRequest()
     if len(rule.non_empty_children()) == 1:
-        return rule_as_json(rule.to_equivalence_rule())
+        rule_json = rule_as_json(rule.to_equivalence_rule())
+        rule_json["original_rule"] = rule.to_jsonable()
+        return rule_json
     return rule_as_json(rule)
 
 
@@ -262,9 +286,99 @@ def _fusion_input() -> Tuple[Tiling, int, bool]:
 def fusion() -> dict:
     """Apply fusion strategy to given tiling."""
     tiling, idx, row = _fusion_input()
-    arguments = (idx, None) if row else (None, idx)
+    arguments = (idx, None, True) if row else (None, idx, True)
     try:
         rule = FusionStrategy(*arguments)(tiling)
     except StrategyDoesNotApply as exc:
         raise BadRequest() from exc
     return rule_as_json(rule)
+
+
+@strategies_blueprint.route("/obstrans", methods=["POST"])
+def obstruction_transivity() -> dict:
+    """Apply obstruction transivity strategy to given tiling."""
+    tiling = _get_tiling_input()
+    strat = _first_or_bad(ObstructionTransitivityFactory()(tiling))
+    rule = strat(tiling)
+    return rule_as_json(rule)
+
+
+def _get_sliding_input() -> Tuple[Tiling, int, int]:
+    data = _get_request_json()
+    try:
+        tiling: Tiling = Tiling.from_dict(data["tiling"])
+        idx1: int = data["idx1"]
+        idx2: int = data["idx2"]
+    except (TypeError, KeyError, ValueError) as exc:
+        raise BadRequest() from exc
+    if not isinstance(idx1, int) or not isinstance(idx2, int):
+        raise BadRequest()
+    if (
+        max(tiling.dimensions) < 2
+        or min(tiling.dimensions) != 1
+        or min(idx1, idx2) < 0
+        or max(idx1, idx2) >= max(tiling.dimensions)
+        or idx1 == idx2
+    ):
+        raise BadRequest()
+    return tiling, idx1, idx2
+
+
+@strategies_blueprint.route("/sliding", methods=["POST"])
+def sliding() -> dict:
+    """Apply sliding strategy to given tiling."""
+    tiling, idx1, idx2 = _get_sliding_input()
+    cells = max(tiling.dimensions)
+    offset_idx_set = {cells - idx1 - 1, cells - idx2 - 1}
+    idx_set = {idx1, idx2}
+    sym_type_to_idx_set = {0: idx_set, 1: offset_idx_set, 2: offset_idx_set, 3: idx_set}
+
+    for rule in SlidingFactory(True)(tiling):
+        assert isinstance(rule.strategy, SlidingStrategy)
+        if {rule.strategy.av_12, rule.strategy.av_123} == sym_type_to_idx_set[
+            rule.strategy.symmetry_type
+        ]:
+            return rule_as_json(rule)
+    raise BadRequest()
+
+
+def _get_symmetry_input() -> Tuple[Tiling, int]:
+    data = _get_request_json()
+    try:
+        tiling: Tiling = Tiling.from_dict(data["tiling"])
+        sym_type: int = data["symmetry"]
+    except (TypeError, KeyError, ValueError) as exc:
+        raise BadRequest() from exc
+    if not isinstance(sym_type, int) or not 0 < sym_type < 8:
+        raise BadRequest()
+    return tiling, sym_type
+
+
+@strategies_blueprint.route("/symmetry", methods=["POST"])
+def symmetry() -> dict:
+    """Apply symmetry strategy to given tiling."""
+    tiling, sym_type = _get_symmetry_input()
+    symstrat = {
+        1: TilingRotate90(),
+        2: TilingRotate180(),
+        3: TilingRotate270(),
+        4: TilingReverse(),
+        5: TilingComplement(),
+        6: TilingInverse(),
+        7: TilingAntidiagonal(),
+    }[sym_type]
+    rule: Rule = symstrat(tiling)
+    if rule.children[0] == tiling:
+        raise BadRequest()
+    return rule_as_json(rule)
+
+
+@strategies_blueprint.route("/rearrangeassumption", methods=["POST"])
+def rearrange_assumption():
+    """Apply rearrange assumption strategy to given tiling."""
+    tiling = _get_tiling_input()
+    print(tiling)
+    for strat in RearrangeAssumptionFactory()(tiling):
+        rule = strat(tiling)
+        return rule_as_json(rule)
+    raise BadRequest()

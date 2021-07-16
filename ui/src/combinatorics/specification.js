@@ -1,3 +1,4 @@
+import { isEquivOp } from '../utils/permuta_utils';
 import '../utils/typedefs';
 
 /**
@@ -11,13 +12,56 @@ class Specification {
    * @param {TilingInterface} initialTiling
    */
   constructor(initialTiling) {
-    /** @type {TilingInterface[]} */
-    this.tilings = [initialTiling];
+    /** @type {Object.<number, TilingInterface>} */
+    this.tilings = { 0: initialTiling };
     /** @type {Object.<string,number>} */
     this.tilingIndex = {};
     this.tilingIndex[initialTiling.key] = 0;
-    /** @type {Array.<null|RuleWithoutTilings>} */
-    this.rules = [null];
+    /** @type {Object.<number, RuleWithoutTilings>} */
+    this.rules = {};
+  }
+
+  /**
+   * Remove rule from specification.
+   *
+   * @param {number} id
+   */
+  removeRule(id) {
+    delete this.rules[id];
+  }
+
+  /**
+   * Remove class from specification. This will
+   * also remove the rule whose LHS is the class
+   * if any.
+   *
+   * @param {number} id
+   */
+  removeClass(id) {
+    const tiling = this.tilings[id];
+    delete this.tilingIndex[tiling.key];
+    delete this.rules[id];
+    delete this.tilings[id];
+  }
+
+  /**
+   * Number of unique tilings in the specification.
+   *
+   * @returns {int} tiling count
+   */
+  numberOfTilings() {
+    return Object.keys(this.tilings).length;
+  }
+
+  /**
+   * Create an integer key.
+   *
+   * @returns {number} next key to use.
+   */
+  getNextKey() {
+    let nxt = this.numberOfTilings();
+    while (nxt in this.tilings) nxt -= 1;
+    return nxt;
   }
 
   /**
@@ -58,7 +102,7 @@ class Specification {
    * @return {null|RuleWithoutTilings} rule who's LHS has given id
    */
   getRuleByLHS(id) {
-    return this.rules[id];
+    return this.rules[id] || null;
   }
 
   /**
@@ -68,7 +112,7 @@ class Specification {
    * @returns {boolean} true iff tiling with id has children
    */
   hasChildren(id) {
-    return this.rules[id] !== null;
+    return id in this.rules;
   }
 
   /**
@@ -88,11 +132,29 @@ class Specification {
    * @returns {number} id of new tiling
    */
   addNewClass(tiling) {
-    const idx = this.tilings.length;
+    const idx = this.getNextKey();
     this.tilingIndex[tiling.key] = idx;
-    this.tilings.push(tiling);
-    this.rules.push(null);
+    this.tilings[idx] = tiling;
     return idx;
+  }
+
+  /**
+   * Check if adding child to parent causes tautology.
+   *
+   * @param {number} parentId
+   * @param {string} childKey
+   * @returns {boolean} true iff adding child to parent causes tautology
+   */
+  tautologyCheck(parentId, childKey) {
+    const idx = this.indexOfKey(childKey);
+    if (idx === -1) return false;
+    if (idx === parentId) return true;
+    let rule = this.getRuleByLHS(idx);
+    while (rule !== null && rule.children.length === 1) {
+      if (rule.children[0] === parentId) return true;
+      rule = this.getRuleByLHS(rule.children[0]);
+    }
+    return false;
   }
 
   /**
@@ -119,6 +181,84 @@ class Specification {
     });
     this.rules[parent] = rule.withoutTilings(array);
     return newClasses;
+  }
+
+  toSpecificationJson() {
+    return {
+      root: this.tilings[0].tilingJson,
+      rules: this.#getJsonableRules(),
+    };
+  }
+
+  /**
+   *
+   */
+  #getJsonableRules() {
+    const rules = [];
+    const visited = new Set([0]);
+    const stack = [0];
+    while (stack.length > 0) {
+      const curr = stack.pop();
+      const currTiling = this.tilings[curr];
+      if (this.hasChildren(curr)) {
+        this.#jsonExpand(curr, currTiling, visited, stack, rules);
+      } else if (currTiling.isVerified()) {
+        const rule = { ...currTiling.verified };
+        delete rule.formal_step;
+        rules.push(rule);
+      }
+    }
+    return rules;
+  }
+
+  #jsonExpand(curr, currTiling, visited, stack, rules) {
+    const rule = this.rules[curr];
+    if (isEquivOp(rule.op)) {
+      rules.push({
+        class_module: 'comb_spec_searcher.strategies.rule',
+        rule_class: 'EquivalencePathRule',
+        rules: this.#gatherEquivRules(currTiling, rule, visited, stack),
+      });
+    } else {
+      rule.children.forEach((c) => {
+        if (!visited.has(c)) {
+          visited.add(c);
+          stack.push(c);
+        }
+      });
+      rules.push(this.#ruleToJsonable(rule, currTiling));
+    }
+  }
+
+  #ruleToJsonable(rule, currTiling) {
+    const ruleObj = {
+      class_module: rule.classModule,
+      rule_class: rule.ruleClass,
+      comb_class: currTiling.tilingJson,
+      children: rule.children.map((c) => this.tilings[c].tilingJson),
+      strategy: rule.strategy,
+    };
+    if (rule.originalRule !== undefined) {
+      ruleObj.original_rule = rule.originalRule;
+      delete ruleObj.comb_class;
+      delete ruleObj.children;
+      delete ruleObj.strategy;
+    }
+    return ruleObj;
+  }
+
+  #gatherEquivRules(currTiling, rule, visited, stack) {
+    const rules = [this.#ruleToJsonable(rule, currTiling)];
+    let nxt = rule.children[0];
+    let nxtRule = this.rules[nxt];
+    while (this.hasChildren(nxt) && isEquivOp(nxtRule.op)) {
+      rules.push(this.#ruleToJsonable(nxtRule, this.tilings[nxt]));
+      [nxt] = nxtRule.children;
+      nxtRule = this.rules[nxt];
+    }
+    visited.add(nxt);
+    stack.push(nxt);
+    return rules;
   }
 }
 
