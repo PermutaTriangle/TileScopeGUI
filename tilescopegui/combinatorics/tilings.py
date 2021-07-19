@@ -121,5 +121,6 @@ def tiling_to_gui_json(tiling: Tiling) -> dict:
         "key": base64.b64encode(tiling.to_bytes()).decode("utf-8"),
         "verified": verify_to_json(tiling),
     }
-    # TODO: Stop sending reqs, assumptions and obstructions in plot and make js
-    # process those from the json
+    # TODO: stop sending tiling.to_jsonable as js does only need it for exporting
+    # Just make export convert all keys to tiling with a api call before exporting
+    # => way less memory used
