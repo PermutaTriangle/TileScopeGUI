@@ -1,24 +1,19 @@
-from pathlib import Path
-
 import pytest
 
-import tilescopegui.utils.paths
+from tests.utils.mocks.mock_paths import MockPaths
 
 
 @pytest.fixture
-def mock_static_path(monkeypatch):
-    mock_path = Path(__file__).parent.parent.joinpath("utils", "mocks", "static")
+def test_app():
+    with MockPaths():
+        from tilescopegui.factory import TestingConfig, create_app
 
-    monkeypatch.setattr(tilescopegui.utils.paths.PathUtil, "_STATIC_DIR", mock_path)
-    monkeypatch.setattr(tilescopegui.utils.paths.PathUtil, "_TEMPLATE_DIR", mock_path)
+        yield create_app(TestingConfig())
 
 
 @pytest.fixture
-def client(mock_static_path):
-    from tilescopegui.factory import TestingConfig, create_app
-
-    app = create_app(TestingConfig())
-    with app.app_context(), app.test_client() as client:
+def client(test_app):
+    with test_app.app_context(), test_app.test_client() as client:
         yield client
 
 
