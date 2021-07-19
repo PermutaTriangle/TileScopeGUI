@@ -2,15 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from tilescopegui.utils import PathUtil
+import tilescopegui.utils.paths
 
 
 @pytest.fixture
 def mock_static_path(monkeypatch):
     mock_path = Path(__file__).parent.parent.joinpath("utils", "mocks", "static")
 
-    monkeypatch.setattr(PathUtil, "_STATIC_DIR", mock_path)
-    monkeypatch.setattr(PathUtil, "_TEMPLATE_DIR", mock_path)
+    monkeypatch.setattr(tilescopegui.utils.paths.PathUtil, "_STATIC_DIR", mock_path)
+    monkeypatch.setattr(tilescopegui.utils.paths.PathUtil, "_TEMPLATE_DIR", mock_path)
 
 
 @pytest.fixture
