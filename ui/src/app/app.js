@@ -5,16 +5,29 @@ import TextInput from './text_input';
 import SpecTree from './spec_tree';
 import ErrorDisplay from './error_display';
 import AppState from './app_state';
+import statusCode from '../consumers/status_codes';
+import { getTiling } from '../consumers/service';
+import { downloadJson } from '../utils/dom_utils';
 
 import '../utils/typedefs';
 
 import './styles/app.scss';
-import { downloadJson } from '../utils/dom_utils';
 
 /**
  * The main component. It keeps track of states.
  */
 class App {
+  /**
+   * Convert failure status code to error message.
+   *
+   * @param {number} status
+   * @returns {string} error message
+   */
+  static statusToMessage(status) {
+    if (status < 0) return 'Server unavailable';
+    return 'Invalid input';
+  }
+
   /**
    * Create an instance of the app.
    */
@@ -69,8 +82,13 @@ class App {
         (msg) => {
           this.errorDisplay.alert(msg);
         },
-        (data) => {
-          this.startTree(data);
+        async (val) => {
+          const res = await getTiling(val);
+          if (res.status !== statusCode.OK) {
+            this.errorDisplay.alert(App.statusToMessage(res.status));
+          } else {
+            this.startTree(res.data);
+          }
         },
       );
     }
@@ -82,7 +100,7 @@ class App {
    * @async
    * @param {TilingResponse} data
    */
-  async startTree(data) {
+  startTree(data) {
     this.specTree = new SpecTree(this.appSelector, data, this.errorDisplay, this.appState);
     this.textInput.remove();
     this.textInput = null;
@@ -118,7 +136,7 @@ class App {
     } else if (this.specTree.hasSpecification()) {
       downloadJson(this.specTree.spec.toSpecificationJson(), 'specification');
     } else {
-      this.errorDisplay.notImplemented();
+      this.errorDisplay.alert('Currently only implemented for complete specs');
     }
   }
 
