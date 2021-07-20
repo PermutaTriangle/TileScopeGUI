@@ -11,6 +11,10 @@ test('test setup instace', async () => {
 });
 
 describe('test api get', () => {
+  afterEach(() => {
+    mockAxios.get.mock.calls.pop();
+  });
+
   test('test api get success', async () => {
     mockAxios.get.mockImplementationOnce(() =>
       Promise.resolve({ data: 'maranax infirmux', status: 200 }),
@@ -18,6 +22,21 @@ describe('test api get', () => {
     const res = await apiGet('mypath');
     expect(res.data).toBe('maranax infirmux');
     expect(res.status).toBe(200);
+    expect(mockAxios.get).toHaveBeenCalledTimes(1);
+    const getCall = mockAxios.get.mock.calls[0];
+    expect(getCall[0]).toBe('mypath');
+    expect(getCall[1]).toBe(null);
+  });
+
+  test('test api get success with config', async () => {
+    mockAxios.get.mockImplementationOnce(() =>
+      Promise.resolve({ data: 'maranax infirmux', status: 200 }),
+    );
+    const res = await apiGet('mypath', { headers: { something: true } });
+    expect(mockAxios.get).toHaveBeenCalledTimes(1);
+    const getCall = mockAxios.get.mock.calls[0];
+    expect(getCall[0]).toBe('mypath');
+    expect(getCall[1]).toEqual({ headers: { something: true } });
   });
 
   test('test api get status failure', async () => {
@@ -40,6 +59,10 @@ describe('test api get', () => {
 });
 
 describe('test api post', () => {
+  afterEach(() => {
+    mockAxios.post.mock.calls.pop();
+  });
+
   const body = { mydata: 'abc' };
 
   test('test api post success', async () => {
@@ -50,6 +73,17 @@ describe('test api post', () => {
     expect(res.data).toBe('maranax infirmux');
     expect(res.status).toBe(200);
     expect(mockAxios.post.mock.calls[0][1]).toBe('{"mydata":"abc"}');
+  });
+
+  test('test api post success with config', async () => {
+    mockAxios.post.mockImplementationOnce(() =>
+      Promise.resolve({ data: 'maranax infirmux', status: 200 }),
+    );
+    const res = await apiPost('mypath', body, { stuff: true });
+    expect(res.data).toBe('maranax infirmux');
+    expect(res.status).toBe(200);
+    expect(mockAxios.post.mock.calls[0][1]).toBe('{"mydata":"abc"}');
+    expect(mockAxios.post.mock.calls[0][2]).toEqual({ stuff: true });
   });
 
   test('test api post status failure', async () => {

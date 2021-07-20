@@ -1,22 +1,11 @@
 import pytest
 
-from tests.utils.mocks.mock_paths import MockPaths
+from tests.utils.mocks.mock_client import client_generator
 
 
 @pytest.fixture
-def test_app():
-    with MockPaths():
-        from tilescopegui.factory import TestingConfig, create_app
-
-        app = create_app(TestingConfig())
-        app.blueprints["home_blueprint"].template_folder = MockPaths._TMP.as_posix()
-        yield app
-
-
-@pytest.fixture
-def client(test_app):
-    with test_app.app_context(), test_app.test_client() as client:
-        yield client
+def client():
+    yield from client_generator()
 
 
 def test_index(client):

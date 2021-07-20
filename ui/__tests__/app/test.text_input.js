@@ -14,6 +14,11 @@ beforeEach(() => {
   textInput = new TextInput($('#parent'), msg, callback);
 });
 
+afterEach(() => {
+  $('#parent').remove();
+  expect($('body').html()).toBe('');
+});
+
 test('test text input construction and deconstruction', () => {
   expect(getByText(document.body, 'Basis')).toBeInTheDocument();
   const divPar = $('.basis-input')[0];
@@ -23,10 +28,12 @@ test('test text input construction and deconstruction', () => {
   expect(input).toBeInTheDocument();
   expect(input.placeholder).toBe('Basis');
   expect(input.name).toBe('basis');
-  const label = $('.basis-input > label')[0];
+  expect(input.getAttribute('autocomplete')).toBe('off');
+  const label = $('.basis-input > .basis-label')[0];
   expect(label).toBeInTheDocument();
   expect(label.htmlFor).toBe('basis');
   expect(label.innerHTML).toBe('Basis');
+  expect(label.tagName).toBe('LABEL');
 
   textInput.remove();
   expect($('.basis-input').length).toBe(0);

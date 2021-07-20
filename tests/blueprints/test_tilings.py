@@ -4,7 +4,7 @@ from base64 import b64decode
 import pytest
 from tilings import GriddedPerm, Tiling, TrackingAssumption
 
-from tilescopegui.factory import TestingConfig, create_app
+from tests.utils.mocks.mock_client import client_generator
 
 _HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
 
@@ -13,9 +13,7 @@ _INIT_PATH = "/api/tiling/init"
 
 @pytest.fixture
 def client():
-    app = create_app(TestingConfig())
-    with app.app_context(), app.test_client() as client:
-        yield client
+    yield from client_generator()
 
 
 def post(cli, path: str, data, headers=_HEADERS):

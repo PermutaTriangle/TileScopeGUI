@@ -3,19 +3,17 @@
   color: wheat;
   background-color: black;
   overflow: hidden;
-}
-
-/* Style the links inside the navigation bar */
-.topnav a {
-  float: left;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-/* Change the color of links on hover */
-.topnav a:hover {
-  background-color: #1d1e26;
-  cursor: pointer;
+  /* Style the links inside the navigation bar */
+  > a {
+    float: left;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 14px;
+    /* Change the color of links on hover */
+    &:hover {
+      background-color: #1d1e26;
+      cursor: pointer;
+    }
+  }
 }

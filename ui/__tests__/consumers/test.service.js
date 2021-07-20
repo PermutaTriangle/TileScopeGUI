@@ -2,6 +2,7 @@ import mockAxios from '../../__mocks__/axios';
 
 import {
   getTiling,
+  decodeTilings,
   rowColPlacement,
   factor,
   cellInsertion,
@@ -28,6 +29,10 @@ const tester = async (apiCall, callArgs, expectedPath, expectedJson) => {
 test('test getTiling service', async () => {
   await tester(getTiling, ['123'], '/tiling/init', '"123"');
 });
+
+test('test decodeTilings service', async () => {
+  await tester(decodeTilings, [['a', 'b']], '/tiling/decode', JSON.stringify(['a', 'b']))
+})
 
 test('test rowColPlacement service', async () => {
   await tester(

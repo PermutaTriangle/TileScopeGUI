@@ -1,13 +1,13 @@
 import $ from 'jquery';
 
-import NavBar from './nav_bar';
+import createNavBar from './nav_bar';
 import TextInput from './text_input';
 import SpecTree from './spec_tree';
 import ErrorDisplay from './error_display';
-import AppState from './app_state';
 import statusCode from '../consumers/status_codes';
 import { getTiling } from '../consumers/service';
 import { downloadJson } from '../utils/dom_utils';
+import AppState from '../utils/app_state';
 
 import '../utils/typedefs';
 
@@ -37,32 +37,27 @@ class App {
     /** @type {JQuery} */
     this.appSelector = $('#app');
     /** @type {NavBar} */
-    this.navBar = new NavBar(this.appSelector);
+    createNavBar(
+      this.appSelector,
+      () => {
+        this.init();
+      },
+      () => {
+        this.reset();
+      },
+      () => {
+        this.export();
+      },
+      () => {
+        this.import();
+      },
+    );
     /** @type {ErrorDisplay} */
     this.errorDisplay = new ErrorDisplay(this.appSelector);
     /** @type {null|TextInput} */
     this.textInput = null;
     /** @type {null|SpecTree} */
     this.specTree = null;
-    this.setNavbarEvents();
-  }
-
-  /**
-   * Set events for navigation bar.
-   */
-  setNavbarEvents() {
-    this.navBar.setHomeEvent(() => {
-      this.init();
-    });
-    this.navBar.setResetEvent(() => {
-      this.reset();
-    });
-    this.navBar.setExportEvent(() => {
-      this.export();
-    });
-    this.navBar.setImportEvent(() => {
-      this.import();
-    });
   }
 
   /**

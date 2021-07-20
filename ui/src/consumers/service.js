@@ -12,6 +12,15 @@ import '../utils/typedefs';
 const getTiling = async (basisOrJson) => apiPost('/tiling/init', basisOrJson);
 
 /**
+ * Convert an array of tiling keys to tiling jsons.
+ *
+ * @async
+ * @param {string[]} tilingKeys
+ * @returns {Promise.<{status: number, data: object}>}
+ */
+const decodeTilings = async (tilingKeys) => apiPost('/tiling/decode', tilingKeys);
+
+/**
  * An endpoint for getting row/col placement rule given a tiling.
  *
  * @async
@@ -60,6 +69,7 @@ const rowColSeparation = async (tilingJson) => apiPost('/strategies/rowcolsep', 
 /**
  * An endpoint for obstuction inferral.
  *
+ * @async
  * @param {TilingJson} tilingJson
  * @returns {RuleResponsePromise} promise with rule
  */
@@ -82,6 +92,7 @@ const reqPlacement = async (tilingJson, x, y, idx, dir) =>
 /**
  * An endpoint for adding assumptions given a tiling.
  *
+ * @async
  * @param {TilingJson} tilingJson
  * @param {number[][]} pos
  * @returns {RuleResponsePromise} promise with rule
@@ -92,6 +103,7 @@ const addAssumption = async (tilingJson, pos) =>
 /**
  * An endpoint for fusing given a tiling.
  *
+ * @async
  * @param {TilingJson} tilingJson
  * @param {number} idx
  * @param {boolean} row
@@ -103,6 +115,7 @@ const fusion = async (tilingJson, idx, row) =>
 /**
  * An endpoint for sliding given a tiling.
  *
+ * @async
  * @param {TilingJson} tilingJson
  * @param {number} idx1
  * @param {number} idx2
@@ -114,6 +127,7 @@ const sliding = async (tilingJson, idx1, idx2) =>
 /**
  * An endpoint for symmetry given a tiling.
  *
+ * @async
  * @param {TilingJson} tilingJson
  * @param {number} symType
  * @returns {RuleResponsePromise} promise with rule
@@ -124,6 +138,7 @@ const symmetries = async (tilingJson, symType) =>
 /**
  * An endpoint for rearrange assumption given a tiling.
  *
+ * @async
  * @param {TilingJson} tilingJson
  * @returns {RuleResponsePromise} promise with rule
  */
@@ -132,6 +147,7 @@ const rearrangeAssumption = async (tilingJson) =>
 
 export {
   getTiling,
+  decodeTilings,
   rowColPlacement,
   factor,
   cellInsertion,

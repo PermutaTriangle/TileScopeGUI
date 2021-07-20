@@ -17,15 +17,16 @@ class TextInput {
    * @returns {string} raw HTML string
    */
   static #getHTML() {
-    // Modified version of https://codepen.io/lucasyem/pen/ZEEYKdj
     return `<div class="basis-input">
-  <input type="input" placeholder="Basis" name="basis" required />
+  <input type="input" placeholder="Basis" name="basis" autocomplete="off" required />
   <label for="basis" class="basis-label">Basis</label>
 </div>`;
   }
 
   /**
-   * Check if tiling json is valid.
+   * Check if tiling json is valid. It is not necessarily valid
+   * when this returns true but just containes the required outer
+   * most properties.
    *
    * @param {object} obj
    * @returns {boolean} true if object contains needed fields
