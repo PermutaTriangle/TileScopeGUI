@@ -9,15 +9,15 @@ jobs:
       run:
         working-directory: ./ui
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-    - run: npm install
-    - run: npm run-script lint
-    - run: npm run-script test
-    - run: npm install -g parcel-bundler
-    - run: parcel build src/index.html
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - run: npm install
+      - run: npm run-script lint
+      - run: npm run-script test
+      - run: npm install -g parcel-bundler
+      - run: parcel build src/index.html
   test:
     strategy:
       fail-fast: false
@@ -47,10 +47,10 @@ jobs:
           - python: 3.9
             toxenv: py39
             os: ubuntu-latest
-          - python: 3.8
+          - python: 3.9
             toxenv: py38
             os: macos-latest
-          - python: 3.8
+          - python: 3.9
             toxenv: py38
             os: windows-latest
 

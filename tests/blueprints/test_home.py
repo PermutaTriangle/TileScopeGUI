@@ -32,3 +32,8 @@ def test_static(client):
     assert res.status_code == 200
     assert res.mimetype == "application/javascript"
     assert res.data.decode("utf-8") == '(() => {\n  alert("mock");\n})();\n'
+
+
+def test_static_not_found(client):
+    res = client.get("/static/somefile.txt")
+    assert res.status_code == 404

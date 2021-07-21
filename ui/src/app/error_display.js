@@ -5,7 +5,6 @@ import { uuid } from '../utils/dom_utils';
 
 import './styles/error_display.scss';
 
-
 /**
  * A component for error messages.
  */
