@@ -12,7 +12,7 @@ test('test setup instace', async () => {
 
 describe('test api get', () => {
   afterEach(() => {
-    mockAxios.get.mock.calls.pop();
+    mockAxios.get.mockReset();
   });
 
   test('test api get success', async () => {
@@ -60,7 +60,7 @@ describe('test api get', () => {
 
 describe('test api post', () => {
   afterEach(() => {
-    mockAxios.post.mock.calls.pop();
+    mockAxios.post.mockReset();
   });
 
   const body = { mydata: 'abc' };

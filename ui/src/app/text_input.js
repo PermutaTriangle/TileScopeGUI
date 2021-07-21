@@ -1,6 +1,8 @@
 import $ from 'jquery';
+
 import { isStr, isObj } from '../utils/utils';
 import Tiling from '../combinatorics/tiling';
+
 import '../utils/typedefs';
 
 import './styles/text_input.scss';
@@ -9,7 +11,7 @@ import './styles/text_input.scss';
  * A component for root input.
  */
 class TextInput {
-  // #region static
+  // #region Static functions
 
   /**
    * Get raw HTML for text input.
@@ -88,7 +90,15 @@ class TextInput {
 
   // #endregion
 
-  // #region Public
+  // #region Private instance variables
+
+  #selector;
+
+  #callback;
+
+  // #endregion
+
+  // #region Public functions
 
   /**
    * Create a text input bar. This will generate the HTML and add to parent.
@@ -101,9 +111,9 @@ class TextInput {
   constructor(parentSelector, errorMsg, callback) {
     parentSelector.append(TextInput.#getHTML());
     /** @type {JQuery} */
-    this.selector = $('.basis-input');
+    this.#selector = $('.basis-input');
     /** @type {(data: TilingResponse) => void} */
-    this.callback = callback;
+    this.#callback = callback;
     this.#setEvents(errorMsg);
   }
 
@@ -111,12 +121,12 @@ class TextInput {
    * Remove the text input. This will clean up all DOM elements.
    */
   remove() {
-    this.selector.remove();
+    this.#selector.remove();
   }
 
   // #endregion
 
-  // #region Private
+  // #region Private functions
 
   /**
    * Set events for input field.
@@ -131,7 +141,7 @@ class TextInput {
         if (err) {
           errorMsg('Invalid input');
         } else {
-          this.callback(val);
+          this.#callback(val);
         }
       }
     });

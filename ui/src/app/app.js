@@ -17,47 +17,55 @@ import './styles/app.scss';
  * The main component. It keeps track of states.
  */
 class App {
+  // #region Static functions
+
   /**
    * Convert failure status code to error message.
    *
    * @param {number} status
    * @returns {string} error message
    */
-  static statusToMessage(status) {
+  static #statusToMessage(status) {
     if (status < 0) return 'Server unavailable';
     return 'Invalid input';
   }
 
+  // #endregion
+
+  // #region Private variables
+
+  #appState;
+
+  #appSelector;
+
+  #errorDisplay;
+
+  #textInput;
+
+  #specTree;
+
+  // #endregion
+
+  // #region Public functions
+
   /**
    * Create an instance of the app.
+   *
+   * @param {string} containerId
    */
-  constructor() {
+  constructor(containerId) {
     /** @type {AppState} */
-    this.appState = new AppState();
+    this.#appState = new AppState();
     /** @type {JQuery} */
-    this.appSelector = $('#app');
+    this.#appSelector = $(`#${containerId}`);
     /** @type {NavBar} */
-    createNavBar(
-      this.appSelector,
-      () => {
-        this.init();
-      },
-      () => {
-        this.reset();
-      },
-      () => {
-        this.export();
-      },
-      () => {
-        this.import();
-      },
-    );
+    createNavBar(this.#appSelector, ...this.#callbacksAsArgs());
     /** @type {ErrorDisplay} */
-    this.errorDisplay = new ErrorDisplay(this.appSelector);
+    this.#errorDisplay = new ErrorDisplay(this.#appSelector);
     /** @type {null|TextInput} */
-    this.textInput = null;
+    this.#textInput = null;
     /** @type {null|SpecTree} */
-    this.specTree = null;
+    this.#specTree = null;
   }
 
   /**
@@ -65,28 +73,39 @@ class App {
    * with the input field.
    */
   init() {
-    if (this.specTree) {
-      this.specTree.remove();
-      this.specTree = null;
+    if (this.#specTree) {
+      this.#cleanSpecTree();
     }
 
-    // Create a text field for input.
-    if (!this.textInput) {
-      this.textInput = new TextInput(
-        this.appSelector,
-        (msg) => {
-          this.errorDisplay.alert(msg);
-        },
-        async (val) => {
-          const res = await getTiling(val);
-          if (res.status !== statusCode.OK) {
-            this.errorDisplay.alert(App.statusToMessage(res.status));
-          } else {
-            this.startTree(res.data);
-          }
-        },
-      );
+    if (!this.#textInput) {
+      this.#initTextField();
     }
+  }
+
+  // #endregion
+
+  // #region Private functions
+
+  /**
+   * Get the callbacks in array.
+   *
+   * @returns {Array.<() => void>} callbacks
+   */
+  #callbacksAsArgs() {
+    return [
+      () => {
+        this.init();
+      },
+      () => {
+        this.#reset();
+      },
+      () => {
+        this.#export();
+      },
+      () => {
+        this.#import();
+      },
+    ];
   }
 
   /**
@@ -95,52 +114,116 @@ class App {
    * @async
    * @param {TilingResponse} data
    */
-  startTree(data) {
-    this.specTree = new SpecTree(this.appSelector, data, this.errorDisplay, this.appState);
-    this.textInput.remove();
-    this.textInput = null;
+  #startTree(data) {
+    this.#specTree = new SpecTree(this.#appSelector, data, this.#errorDisplay, this.#appState);
+    this.#cleanInputField();
   }
 
   /**
    * Reset the current tree, starting again from the root.
    */
-  reset() {
-    if (!this.specTree) {
+  #reset() {
+    if (!this.#specTree) {
       this.init();
     } else {
-      const root = this.specTree.getRoot();
-      const data = {
-        tiling: root.tilingJson,
-        plot: root.plot,
-        key: root.key,
-        verified: root.verified,
-      };
-      this.specTree.remove();
-      this.specTree = null;
-      this.specTree = new SpecTree(this.appSelector, data, this.errorDisplay, this.appState);
+      const data = this.#getRootTilingAsResponse();
+      this.#resetSpecTree(data);
     }
+  }
+
+  /**
+   * Remove everything but root.
+   *
+   * @param {TilingResponse} data
+   */
+  #resetSpecTree(data) {
+    this.#specTree.remove();
+    this.#specTree = null;
+    this.#specTree = new SpecTree(this.#appSelector, data, this.#errorDisplay, this.#appState);
+  }
+
+  /**
+   * Remove spec tree.
+   */
+  #cleanSpecTree() {
+    this.#specTree.remove();
+    this.#specTree = null;
+  }
+
+  /**
+   * Remove input field.
+   */
+  #cleanInputField() {
+    this.#textInput.remove();
+    this.#textInput = null;
+  }
+
+  /**
+   * Initialize input field
+   */
+  #initTextField() {
+    this.#textInput = new TextInput(
+      this.#appSelector,
+      (msg) => {
+        this.#errorDisplay.alert(msg);
+      },
+      async (val) => {
+        const res = await getTiling(val);
+        this.#processResponse(res);
+      },
+    );
+  }
+
+  /**
+   * Handle get tiling response.
+   *
+   * @param {{status: number, data: null|TilingResponse}} res
+   */
+  #processResponse(res) {
+    if (res.status !== statusCode.OK) {
+      this.#errorDisplay.alert(App.#statusToMessage(res.status));
+    } else {
+      this.#startTree(res.data);
+    }
+  }
+
+  /**
+   * Get root tiling in the same format as the original starting request.
+   *
+   * @returns {TilingResponse} tiling as in original request
+   */
+  #getRootTilingAsResponse() {
+    const root = this.#specTree.getRoot();
+    return {
+      tiling: root.tilingJson,
+      plot: root.plot,
+      key: root.key,
+      verified: root.verified,
+    };
   }
 
   /**
    * Export the current tree, either as a session or as a specification json.
    * The latter will only be possible if its complete.
    */
-  export() {
-    if (!this.specTree) {
-      this.errorDisplay.alert('Nothing to export');
-    } else if (this.specTree.hasSpecification()) {
-      downloadJson(this.specTree.spec.toSpecificationJson(), 'specification');
+  #export() {
+    if (!this.#specTree) {
+      this.#errorDisplay.alert('Nothing to export');
+    } else if (this.#specTree.hasSpecification()) {
+      downloadJson(this.#specTree.spec.toSpecificationJson(), 'specification');
     } else {
-      this.errorDisplay.alert('Currently only implemented for complete specs');
+      this.#errorDisplay.alert('Currently only implemented for complete specs');
     }
   }
 
   /**
    * Import an existing session.
    */
-  import() {
-    this.errorDisplay.notImplemented();
+  #import() {
+    this.#errorDisplay.notImplemented();
   }
+
+  // #endregion
 }
 
 export default App;

@@ -33,9 +33,7 @@ const createNavBar = (domParent, homeCallback, resetCallback, exportCallback, im
     arr.forEach((callback, i) => {
       $(`.topnav > a:nth-child(${i + 1})`)
         .off('click')
-        .on('click', () => {
-          callback();
-        });
+        .on('click', callback);
     });
   };
 
