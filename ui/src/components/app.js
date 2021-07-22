@@ -34,14 +34,19 @@ class App {
 
   // #region Private variables
 
+  /** @type {AppState} */
   #appState;
 
+  /** @type {JQuery} */
   #appSelector;
 
+  /** @type {ErrorDisplay} */
   #errorDisplay;
 
+  /** @type {null|TextInput} */
   #textInput;
 
+  /** @type {null|SpecTree} */
   #specTree;
 
   // #endregion
@@ -51,20 +56,15 @@ class App {
   /**
    * Create an instance of the app.
    *
+   * @constructor
    * @param {string} containerId
    */
   constructor(containerId) {
-    /** @type {AppState} */
     this.#appState = new AppState();
-    /** @type {JQuery} */
     this.#appSelector = $(`#${containerId}`);
-    /** @type {NavBar} */
     createNavBar(this.#appSelector, ...this.#callbacksAsArgs());
-    /** @type {ErrorDisplay} */
     this.#errorDisplay = new ErrorDisplay(this.#appSelector);
-    /** @type {null|TextInput} */
     this.#textInput = null;
-    /** @type {null|SpecTree} */
     this.#specTree = null;
   }
 
@@ -105,7 +105,21 @@ class App {
       () => {
         this.#import();
       },
+      () => {
+        this.#settings();
+      },
+      () => {
+        this.#help();
+      },
     ];
+  }
+
+  #settings() {
+    this.#errorDisplay.notImplemented();
+  }
+
+  #help() {
+    this.#errorDisplay.notImplemented();
   }
 
   /**

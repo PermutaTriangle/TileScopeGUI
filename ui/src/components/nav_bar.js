@@ -10,8 +10,18 @@ import './styles/nav_bar.scss';
  * @param {() => void} resetCallback
  * @param {() => void} exportCallback
  * @param {() => void} importCallback
+ * @param {() => void} settingsCallback
+ * @param {() => void} helpCallback
  */
-const createNavBar = (domParent, homeCallback, resetCallback, exportCallback, importCallback) => {
+const createNavBar = (
+  domParent,
+  homeCallback,
+  resetCallback,
+  exportCallback,
+  importCallback,
+  settingsCallback,
+  helpCallback,
+) => {
   /**
    * Raw html for navigation bar.
    *
@@ -22,6 +32,8 @@ const createNavBar = (domParent, homeCallback, resetCallback, exportCallback, im
   <a>Reset</a>
   <a>Export</a>
   <a>Import</a>
+  <a>Settings</a>
+  <a>Help</a>
 </div>`;
 
   /**
@@ -29,8 +41,8 @@ const createNavBar = (domParent, homeCallback, resetCallback, exportCallback, im
    *
    * @param {string[][]} arr
    */
-  const setEvents = (arr) => {
-    arr.forEach((callback, i) => {
+  const setEvents = (...callbacks) => {
+    callbacks.forEach((callback, i) => {
       $(`.topnav > a:nth-child(${i + 1})`)
         .off('click')
         .on('click', callback);
@@ -38,7 +50,14 @@ const createNavBar = (domParent, homeCallback, resetCallback, exportCallback, im
   };
 
   domParent.prepend(getHTML());
-  setEvents([homeCallback, resetCallback, exportCallback, importCallback]);
+  setEvents(
+    homeCallback,
+    resetCallback,
+    exportCallback,
+    importCallback,
+    settingsCallback,
+    helpCallback,
+  );
 };
 
 export default createNavBar;

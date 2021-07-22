@@ -6,8 +6,8 @@ import Tiling from '../combinatorics/tiling';
 import Specification from '../combinatorics/specification';
 import Treant from '../treant/treant';
 import Rule from '../combinatorics/rule';
-import Modal from './modal';
 import Queue from '../containers/queue';
+import viewClassNode from './node_viewer';
 
 import '../utils/typedefs';
 
@@ -287,7 +287,7 @@ class SpecTree {
       const node = this.treant.getNode(nodeId);
       const tiling = this.spec.getClassById(classId);
       const rule = this.spec.getRuleByLHS(classId);
-      Modal.render(
+      viewClassNode(
         tiling,
         this.appState,
         node.nodeInnerHTML,

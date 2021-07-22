@@ -41,6 +41,6 @@ class MockErrorDisplay {
   }
 }
 
-jest.mock('../../src/app/error_display', () => MockErrorDisplay);
+jest.mock('../../src/components/error_display', () => MockErrorDisplay);
 
 export default MockErrorDisplay;

@@ -1,5 +1,5 @@
 // import $ from 'jquery';
-import App from './app/app';
+import App from './components/app';
 
 /** Main function */
 (() => {

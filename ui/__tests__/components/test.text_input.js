@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { fireEvent, getByText } from '@testing-library/dom';
-import TextInput from '../../src/app/text_input';
+import TextInput from '../../src/components/text_input';
 import '@testing-library/jest-dom/extend-expect';
 
 let msg;
