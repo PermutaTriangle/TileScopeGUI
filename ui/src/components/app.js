@@ -8,6 +8,8 @@ import statusCode from '../consumers/status_codes';
 import { getTiling } from '../consumers/service';
 import { downloadJson } from '../utils/dom_utils';
 import AppState from '../utils/app_state';
+import displaySettings from './settings';
+import displayHelp from './help';
 
 import '../utils/typedefs';
 
@@ -106,20 +108,12 @@ class App {
         this.#import();
       },
       () => {
-        this.#settings();
+        displaySettings(this.#appState);
       },
       () => {
-        this.#help();
+        displayHelp();
       },
     ];
-  }
-
-  #settings() {
-    this.#errorDisplay.notImplemented();
-  }
-
-  #help() {
-    this.#errorDisplay.notImplemented();
   }
 
   /**

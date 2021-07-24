@@ -5,6 +5,19 @@ import '../utils/typedefs';
  * A JS representation of a partial specification.
  */
 class Specification {
+  static #verificationRule(currTiling) {
+    const rule = { ...currTiling.verified };
+    delete rule.formal_step;
+    return rule;
+  }
+
+  static #getJsonableRulesInit() {
+    const rules = [];
+    const visited = new Set([0]);
+    const stack = [0];
+    return { rules, visited, stack };
+  }
+
   /**
    * Create a partial specification from root.
    *
@@ -19,6 +32,15 @@ class Specification {
     this.tilingIndex[initialTiling.key] = 0;
     /** @type {Object.<number, RuleWithoutTilings>} */
     this.rules = {};
+  }
+
+  /**
+   * Get all tiling keys in the (possibly partial) specification.
+   *
+   * @returns {string[]} keys
+   */
+  allTilingKeys() {
+    return Object.keys(this.tilingIndex);
   }
 
   /**
@@ -149,12 +171,7 @@ class Specification {
     const idx = this.indexOfKey(childKey);
     if (idx === -1) return false;
     if (idx === parentId) return true;
-    let rule = this.getRuleByLHS(idx);
-    while (rule !== null && rule.children.length === 1) {
-      if (rule.children[0] === parentId) return true;
-      rule = this.getRuleByLHS(rule.children[0]);
-    }
-    return false;
+    return this.#parentBelowInSingleChildPath(idx, parentId);
   }
 
   /**
@@ -165,21 +182,19 @@ class Specification {
    * @returns {boolean[]} array of booleans representing if child is new in spec
    */
   addRule(parent, rule) {
-    const array = [];
-    const newClasses = [];
-    const newSiblings = {};
+    const [childIds, newClasses, newSiblings] = [[], [], {}];
     rule.children.forEach((child) => {
       let idx = this.indexOfKey(child.key);
       if (idx < 0) {
         idx = this.addNewClass(child);
         newClasses.push(true);
-        newSiblings[`${idx}`] = null;
+        newSiblings[idx] = null;
       } else {
-        newClasses.push(`${idx}` in newSiblings);
+        newClasses.push(idx in newSiblings);
       }
-      array.push(idx);
+      childIds.push(idx);
     });
-    this.rules[parent] = rule.withoutTilings(array);
+    this.rules[parent] = rule.withoutTilings(childIds);
     return newClasses;
   }
 
@@ -192,33 +207,45 @@ class Specification {
 
   /**
    *
+   * @param {number} idx
+   * @param {number} parentId
+   * @returns {boolean} true if parent found
    */
+  #parentBelowInSingleChildPath(idx, parentId) {
+    let rule = this.getRuleByLHS(idx);
+    while (rule !== null && rule.children.length === 1) {
+      if (rule.children[0] === parentId) return true;
+      rule = this.getRuleByLHS(rule.children[0]);
+    }
+    return false;
+  }
+
   #getJsonableRules() {
-    const rules = [];
-    const visited = new Set([0]);
-    const stack = [0];
+    const { rules, visited, stack } = Specification.#getJsonableRulesInit();
     while (stack.length > 0) {
       const curr = stack.pop();
       const currTiling = this.tilings[curr];
       if (this.hasChildren(curr)) {
         this.#jsonExpand(curr, currTiling, visited, stack, rules);
       } else if (currTiling.isVerified()) {
-        const rule = { ...currTiling.verified };
-        delete rule.formal_step;
-        rules.push(rule);
+        rules.push(Specification.#verificationRule(currTiling));
       }
     }
     return rules;
   }
 
+  #constructEquivalencePath(currTiling, rule, visited, stack) {
+    return {
+      class_module: 'comb_spec_searcher.strategies.rule',
+      rule_class: 'EquivalencePathRule',
+      rules: this.#gatherEquivRules(currTiling, rule, visited, stack),
+    };
+  }
+
   #jsonExpand(curr, currTiling, visited, stack, rules) {
     const rule = this.rules[curr];
     if (isEquivOp(rule.op)) {
-      rules.push({
-        class_module: 'comb_spec_searcher.strategies.rule',
-        rule_class: 'EquivalencePathRule',
-        rules: this.#gatherEquivRules(currTiling, rule, visited, stack),
-      });
+      rules.push(this.#constructEquivalencePath(currTiling, rule, visited, stack));
     } else {
       rule.children.forEach((c) => {
         if (!visited.has(c)) {
@@ -230,14 +257,18 @@ class Specification {
     }
   }
 
-  #ruleToJsonable(rule, currTiling) {
-    const ruleObj = {
+  #constructJsonObject(rule, currTiling) {
+    return {
       class_module: rule.classModule,
       rule_class: rule.ruleClass,
       comb_class: currTiling.tilingJson,
       children: rule.children.map((c) => this.tilings[c].tilingJson),
       strategy: rule.strategy,
     };
+  }
+
+  #ruleToJsonable(rule, currTiling) {
+    const ruleObj = this.#constructJsonObject(rule, currTiling);
     if (rule.originalRule !== undefined) {
       ruleObj.original_rule = rule.originalRule;
       delete ruleObj.comb_class;

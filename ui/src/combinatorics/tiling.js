@@ -4,10 +4,16 @@ import '../utils/typedefs';
  * A tiling representation for JS.
  */
 class Tiling {
+  // #region Static variables
+
   /**
    * A regex for extracting consequtive numbers in a string.
    */
-  static basisRegex = /[+-]?\d+(?:\.\d+)?/g;
+  static #basisRegex = /[+-]?\d+(?:\.\d+)?/g;
+
+  // #endregion
+
+  // #region Static functions
 
   /**
    * Convert a basis string of number with any delimiter to
@@ -17,10 +23,14 @@ class Tiling {
    * @returns {string} Empty string if invalid or basis split by `_`
    */
   static convertBasis(basis) {
-    const basisArray = basis.match(Tiling.basisRegex);
+    const basisArray = basis.match(Tiling.#basisRegex);
     if (!basisArray) return '';
     return basisArray.join('_');
   }
+
+  // #endregion
+
+  // #region Public functions
 
   /**
    * Construct tiling from a API tiling response.
@@ -54,41 +64,7 @@ class Tiling {
    * @returns {string} raw HTML for ascii table.
    */
   asciiHTML() {
-    const colorMap = {};
-    this.plot.assumptions.forEach((gps, colorIndex) => {
-      gps.forEach((gp) => {
-        const coord = gp.split(': ')[1];
-        if (coord in colorMap) {
-          if (colorMap[coord][0] !== 'x') {
-            colorMap[coord].push(colorIndex.toString());
-          }
-          if (colorMap[coord].length > 4) {
-            colorMap[coord].length = 1;
-            colorMap[coord][0] = 'x';
-          }
-        } else {
-          colorMap[coord] = [colorIndex.toString()];
-        }
-      });
-    });
-    const assumptionClass = (x, y) => {
-      const key = `(${x}, ${y})`;
-      if (key in colorMap) {
-        return ` class="assumption-${
-          this.plot.assumptions.length > 4 ? 'x' : colorMap[key].join('')
-        }"`;
-      }
-      return '';
-    };
-    const offset = this.plot.matrix.length;
-    return `<table>${this.plot.matrix
-      .map(
-        (row, r) =>
-          `<tr>${row
-            .map((data, c) => `<td${assumptionClass(c, offset - r - 1)}>${data}</td>`)
-            .join('')}</tr>`,
-      )
-      .join('')}</table>`;
+    return `<table>${this.#gatherTableRows()}</table>`;
   }
 
   /**
@@ -99,6 +75,86 @@ class Tiling {
   getTilingObject() {
     return this.tilingJson;
   }
+
+  // #endregion
+
+  // #region Private functions
+
+  /**
+   * Create color maps from coordinates to string indices.
+   *
+   * @returns {Object.<string,string[]>}
+   */
+  #constructColorMap() {
+    const colorMap = {};
+    this.plot.assumptions.forEach((gps, colorIndex) => {
+      gps.forEach((gp) => {
+        const coord = gp.split(': ')[1];
+        if (coord in colorMap) {
+          // If not already capped
+          if (colorMap[coord][0] !== 'x') {
+            colorMap[coord].push(colorIndex.toString());
+          }
+          // If there are more than 4 assumptions, we just color the entire cell
+          if (colorMap[coord].length > 4) {
+            colorMap[coord].length = 1;
+            colorMap[coord][0] = 'x';
+          }
+        } else {
+          colorMap[coord] = [colorIndex.toString()];
+        }
+      });
+    });
+    return colorMap;
+  }
+
+  /**
+   * Convert coordinate to class, possibly nothing.
+   *
+   * @param {nmumber} x
+   * @param {number} y
+   * @param {Object.<string, string[]>} colorMap
+   * @returns {string} class
+   */
+  #assumptionClass(x, y, colorMap) {
+    const key = `(${x}, ${y})`;
+    if (key in colorMap) {
+      return ` class="assumption-${
+        this.plot.assumptions.length > 4 ? 'x' : colorMap[key].join('')
+      }"`;
+    }
+    return '';
+  }
+
+  /**
+   * Gather rows for tiling.
+   *
+   * @returns {string} rows html
+   */
+  #gatherTableRows() {
+    const colorMap = this.#constructColorMap();
+    const offset = this.plot.matrix.length;
+    return this.plot.matrix
+      .map((row, r) => `<tr>${this.#gatherTableRowData(offset, colorMap, row, r)}</tr>`)
+      .join('');
+  }
+
+  /**
+   * Gather data in row.
+   *
+   * @param {number} offset
+   * @param {Object.<string, string[]>} colorMap
+   * @param {string[]} row
+   * @param {number} r
+   * @returns {string} row's inner html
+   */
+  #gatherTableRowData(offset, colorMap, row, r) {
+    return row
+      .map((data, c) => `<td${this.#assumptionClass(c, offset - r - 1, colorMap)}>${data}</td>`)
+      .join('');
+  }
+
+  // #endregion
 }
 
 export default Tiling;

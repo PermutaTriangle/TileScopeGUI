@@ -162,17 +162,6 @@ class SpecTree {
   }
 
   /**
-   * Convert operator to `cong` if single child disjoint union.
-   *
-   * @param {number} numberOfChildren
-   * @param {Rule} rule
-   * @returns {string} op
-   */
-  static #getRuleOp(numberOfChildren, rule) {
-    return numberOfChildren === 1 && rule.op === '+' ? '≅' : rule.op;
-  }
-
-  /**
    * Create a modal from rule.
    *
    * @param {RuleWithoutTilings} modalRule
@@ -639,7 +628,7 @@ class SpecTree {
     this.#updateDuplicates(classId, nodeId);
 
     // Add rule node
-    const parent = this.#addRuleNode(nodeId, classId, children.length, rule);
+    const parent = this.#addRuleNode(nodeId, classId, rule);
 
     // Add child nodes
     this.#addChildNodes(children, newClasses, parent);
@@ -651,27 +640,24 @@ class SpecTree {
   /**
    * Treant data for rule.
    *
-   * @param {number} numberOfChildren
    * @param {Rule} rule
    * @returns {TreantNodeData} data
    */
-  #ruleNodeData(numberOfChildren, rule) {
+  #ruleNodeData(rule) {
     const key = this.#treant.getNextKey();
-    const op = SpecTree.#getRuleOp(numberOfChildren, rule);
-    return SpecTree.#treantRuleNodeData(op, key);
+    return SpecTree.#treantRuleNodeData(rule.op, key);
   }
 
   /**
    * Add rule to treant.
    *
    * @param {number} nodeId
-   * @param {number} numberOfChildren
    * @param {Rule} rule
    * @returns {{parentNodeId: number, newNode: any}}
    */
-  #addRuleToTreant(nodeId, numberOfChildren, rule) {
+  #addRuleToTreant(nodeId, rule) {
     const parentNode = this.#treant.getNode(nodeId);
-    const ruleData = this.#ruleNodeData(numberOfChildren, rule);
+    const ruleData = this.#ruleNodeData(rule);
     const ruleNode = this.#treant.add(parentNode, ruleData);
     return { parentNodeId: parentNode.id, newNode: ruleNode };
   }
@@ -711,12 +697,11 @@ class SpecTree {
    *
    * @param {number} nodeId
    * @param {number} classId
-   * @param {number} numberOfChildren
    * @param {Rule} rule
    * @returns {any} the treant node of rule
    */
-  #addRuleNode(nodeId, classId, numberOfChildren, rule) {
-    const { parentNodeId, newNode } = this.#addRuleToTreant(nodeId, numberOfChildren, rule);
+  #addRuleNode(nodeId, classId, rule) {
+    const { parentNodeId, newNode } = this.#addRuleToTreant(nodeId, rule);
     this.#nodeIdToClassId[newNode.id] = classId;
     this.#setRuleOnClickListener(newNode.id, parentNodeId);
     return newNode;
