@@ -64,6 +64,8 @@ class TilingDisplay {
 
   // #endregion
 
+  // #region Public functions
+
   /**
    * Create tiling display component.
    *
@@ -87,6 +89,10 @@ class TilingDisplay {
 
     this.#plot();
   }
+
+  // #endregion
+
+  // #region Private functions
 
   /**
    * Have we already expanded this tiling?
@@ -262,6 +268,8 @@ class TilingDisplay {
   #ruleForTiling() {
     return accordionItem(5, 'Rule', `<div>${this.#rule.formalStep}</div>`);
   }
+
+  // #endregion
 }
 
 /**

@@ -54,8 +54,40 @@ class Tiling {
    * @returns {string} raw HTML for ascii table.
    */
   asciiHTML() {
+    const colorMap = {};
+    this.plot.assumptions.forEach((gps, colorIndex) => {
+      gps.forEach((gp) => {
+        const coord = gp.split(': ')[1];
+        if (coord in colorMap) {
+          if (colorMap[coord][0] !== 'x') {
+            colorMap[coord].push(colorIndex.toString());
+          }
+          if (colorMap[coord].length > 4) {
+            colorMap[coord].length = 1;
+            colorMap[coord][0] = 'x';
+          }
+        } else {
+          colorMap[coord] = [colorIndex.toString()];
+        }
+      });
+    });
+    const assumptionClass = (x, y) => {
+      const key = `(${x}, ${y})`;
+      if (key in colorMap) {
+        return ` class="assumption-${
+          this.plot.assumptions.length > 4 ? 'x' : colorMap[key].join('')
+        }"`;
+      }
+      return '';
+    };
+    const offset = this.plot.matrix.length;
     return `<table>${this.plot.matrix
-      .map((row) => `<tr><td>${row.join('</td><td>')}</td></tr>`)
+      .map(
+        (row, r) =>
+          `<tr>${row
+            .map((data, c) => `<td${assumptionClass(c, offset - r - 1)}>${data}</td>`)
+            .join('')}</tr>`,
+      )
       .join('')}</table>`;
   }
 

@@ -1,5 +1,5 @@
 # TODO:
-# 1. color assumptions
+# 1.
 # 2. import/export sessions
 # 3. Improve UI for add req and place req (different perm, choose points, etc)
 # 4. Some early non-server failures for strats when applies (e.g. sliding if not 1xN)

@@ -224,7 +224,7 @@ class App {
     if (!this.#specTree) {
       this.#errorDisplay.alert('Nothing to export');
     } else if (this.#specTree.hasSpecification()) {
-      downloadJson(this.#specTree.spec.toSpecificationJson(), 'specification');
+      downloadJson(this.#specTree.getSpecification().toSpecificationJson(), 'specification');
     } else {
       this.#errorDisplay.alert('Currently only implemented for complete specs');
     }

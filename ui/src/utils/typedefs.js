@@ -130,3 +130,18 @@
  * @property {(newParent: JQuery) => void} moveToParent
  * @property {() => void} restoreParent
  */
+
+/**
+ * @typedef TreantNodeData
+ * @property {string} innerHTML
+ * @property {boolean} collapsable
+ * @property {boolean} collapsed
+ */
+
+/**
+ * @typedef ClassToAlternative
+ * @property {(id: number) => number} get
+ * @property {(id: number, value: number) => void} set
+ * @property {(id: number) => boolean} contains
+ * @property {Object.<number,number>} data
+ */

@@ -33,6 +33,17 @@ class Modal {
   }
 
   /**
+   * Danger button for footer
+   *
+   * @param {string} id
+   * @param {string} text
+   * @returns {string} raw HTML string
+   */
+  static dangerFooterButton(id, text) {
+    return `<button id="${id}" type="button" class="btn btn-danger">${text}</button>`;
+  }
+
+  /**
    * Join the three parts into a single string.
    *
    * @param {string} header
@@ -89,7 +100,7 @@ class Modal {
   static #centralModal(id, header, body, footer) {
     return `<div id="${id}" class="modal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    ${Modal.getContent(header, body, footer)}
+    ${Modal.#getContent(header, body, footer)}
   </div>
 </div>`;
   }
@@ -113,20 +124,6 @@ class Modal {
       default:
         throw Error('Invalid modal type');
     }
-  }
-
-  /**
-   * Set up close event.
-   *
-   * @param {() => void)} callback
-   */
-  static #setOnClose(callback) {
-    // TODO: For some reason, hidden.bs.modal isn't working. Temp solution.
-    $('body > div.modal-backdrop.show').one('DOMNodeRemoved', (evt) => {
-      // Bootstrap (or something) seems to add some trailing ";", remove that, TODO: Find a fix
-      evt.currentTarget.previousSibling.remove();
-      callback();
-    });
   }
 
   // #endregion
@@ -156,7 +153,7 @@ class Modal {
    *  header: string,
    *  body: string,
    *  footer: string,
-   *  onClose: () => void,
+   *  onClose: () => void|undefined,
    *  startVisible: boolean,
    *  closeOnEscape: boolean
    * }} config
@@ -169,7 +166,7 @@ class Modal {
     );
     this.#bsModal = new BSModal($(`#${this.#id}`), { keyboard: config.closeOnEscape });
     if (config.startVisible) this.#bsModal.toggle();
-    Modal.#setOnClose(config.onClose);
+    this.#setOnClose(config.onClose);
   }
 
   /**
@@ -197,6 +194,31 @@ class Modal {
    */
   remove() {
     $(`#${this.#id}`).remove();
+  }
+
+  // #endregion
+
+  // #region Private functions
+
+  /**
+   * Set up close event.
+   *
+   * @param {() => void)} callback
+   */
+  #setOnClose(callback) {
+    // TODO: For some reason, hidden.bs.modal isn't working. Temp solution.
+    $('body > div.modal-backdrop.show').one('DOMNodeRemoved', (evt) => {
+      // Bootstrap (or something) seems to add some trailing ";", remove that, TODO: Find a fix
+      const prevSibling = evt.currentTarget.previousSibling;
+      if (prevSibling && prevSibling.nodeValue === ';') {
+        prevSibling.remove();
+      }
+      if (callback) {
+        callback();
+      } else {
+        this.remove();
+      }
+    });
   }
 
   // #endregion

@@ -6,22 +6,40 @@ import displayTiling from './tiling_display';
 
 import '../utils/typedefs';
 
-import './styles/modal.scss';
+import './styles/node_viewer.scss';
 
 /**
  * A modal component that takes over display.
  */
 class NodeViewer {
+  // #region Static functions
+
   /**
    * Set click event on clipboard icon to store tiling as json
    * in user's clipboard.
    *
    * @param {TilingJson} tilingJson
    */
-  static setClipboardEvent(tilingJson) {
+  static #setClipboardEvent(tilingJson) {
     $('#clipboardcopy').on('click', () => {
       navigator.clipboard.writeText(JSON.stringify(tilingJson));
     });
+  }
+
+  /**
+   * Create a new div from a class table html.
+   *
+   * @param {string} nodeHTML
+   * @returns {{div: Element, tableRows: Element[], height: number}}
+   */
+  static #createNewClassDiv(nodeHTML) {
+    const phantom = document.createElement('div');
+    phantom.innerHTML = nodeHTML;
+    const div = phantom.children[0].children[1];
+    div.classList = ['modal-spec-node'];
+    const tableRows = Array.from(div.children[0].children[0].children[0].children);
+    const height = tableRows.length;
+    return { div, tableRows, height };
   }
 
   /**
@@ -31,17 +49,12 @@ class NodeViewer {
    * @param {string} nodeHTML
    * @returns {HTMLDivElement} a div element of tiling drawing
    */
-  static transformFigure(nodeHTML) {
-    const phantom = document.createElement('div');
-    phantom.innerHTML = nodeHTML;
-    const div = phantom.children[0].children[1];
-    div.classList = ['modal-spec-node'];
-    const tableRows = Array.from(div.children[0].children[0].children[0].children);
-    const height = tableRows.length;
+  static #transformFigure(nodeHTML) {
+    const { div, tableRows, height } = NodeViewer.#createNewClassDiv(nodeHTML);
     tableRows.forEach((row, yOffset) => {
-      Array.from(row.children).forEach((tr, xOffset) => {
-        if (tr.innerHTML.trim().length > 0) {
-          tr.classList.add(`matrix_${xOffset}_${height - yOffset - 1}`, 'non-empty-cell');
+      Array.from(row.children).forEach((td, xOffset) => {
+        if (td.innerHTML.trim().length > 0) {
+          td.classList.add(`matrix_${xOffset}_${height - yOffset - 1}`, 'non-empty-cell');
         }
       });
     });
@@ -54,7 +67,7 @@ class NodeViewer {
    * @param {() => void)} callback
    * @returns {Modal} modal
    */
-  static constructModal(callback) {
+  static #constructModal(callback) {
     return new Modal({
       parentSelector: $('body'),
       type: Modal.FULLSCREEN,
@@ -68,6 +81,20 @@ class NodeViewer {
     });
   }
 
+  // #endregion
+
+  // #region Private instance variables
+
+  /** @type {Modal} */
+  #modal;
+
+  /** @type {ErrorDisplayInterface} */
+  #errorDisplay;
+
+  // #endregion
+
+  // #region public methods
+
   /**
    * Create node view component.
    *
@@ -80,20 +107,21 @@ class NodeViewer {
    * @param {(newRule: RuleResponse) => void} callback
    */
   constructor(tiling, appState, nodeHTML, rule, errorDisplay, callback) {
-    /** @type {Modal} */
-    this.modal = NodeViewer.constructModal(() => {
-      this.remove();
+    this.#modal = NodeViewer.#constructModal(() => {
+      this.#remove();
     });
-    /** @type {ErrorDisplayInterface} */
-    this.errorDisplay = errorDisplay;
-    this.errorDisplay.moveToParent($('#nodeview'));
-    // this.setCloseEvent();
-    NodeViewer.setClipboardEvent(tiling.tilingJson);
-    this.renderTiling(tiling, appState, nodeHTML, rule, callback);
+    this.#errorDisplay = errorDisplay;
+    this.#errorDisplay.moveToParent($('#nodeview'));
+    NodeViewer.#setClipboardEvent(tiling.tilingJson);
+    this.#renderTiling(tiling, appState, nodeHTML, rule, callback);
   }
 
-  renderTiling(tiling, appState, nodeHTML, rule, callback) {
-    const tilingDisplayDiv = NodeViewer.transformFigure(nodeHTML);
+  // #endregion
+
+  // #region Private functions
+
+  #renderTiling(tiling, appState, nodeHTML, rule, callback) {
+    const tilingDisplayDiv = NodeViewer.#transformFigure(nodeHTML);
     const tilingDisplayParent = $('#nodeview-content');
     displayTiling(
       tiling,
@@ -101,12 +129,12 @@ class NodeViewer {
       tilingDisplayDiv,
       rule,
       (newRule) => {
-        this.modal.hide();
+        this.#modal.hide();
         callback(newRule);
       },
       tilingDisplayParent,
       (msg) => {
-        this.errorDisplay.alert(msg);
+        this.#errorDisplay.alert(msg);
       },
     );
   }
@@ -114,10 +142,12 @@ class NodeViewer {
   /**
    * Hide and destroy the this component.
    */
-  remove() {
-    this.errorDisplay.restoreParent();
-    this.modal.remove();
+  #remove() {
+    this.#errorDisplay.restoreParent();
+    this.#modal.remove();
   }
+
+  // #endregion
 }
 
 /**
