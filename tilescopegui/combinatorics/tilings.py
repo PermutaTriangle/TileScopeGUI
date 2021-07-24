@@ -1,9 +1,10 @@
 import base64
-from typing import Dict, List, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 from permuta.patterns.perm import Perm
 from tilings.tiling import Tiling
 
+from ..utils import TilingDecodeException
 from .strategies import verify_to_json
 
 LabelCache = Dict[Tuple[Tuple[Perm, ...], bool], str]
@@ -121,5 +122,18 @@ def tiling_to_gui_json(tiling: Tiling) -> dict:
         "key": base64.b64encode(tiling.to_bytes()).decode("utf-8"),
         "verified": verify_to_json(tiling),
     }
-    # TODO: Stop sending reqs, assumptions and obstructions in plot and make js
-    # process those from the json
+    # TODO: stop sending tiling.to_jsonable as js does only need it for exporting
+    # Just make export convert all keys to tiling with a api call before exporting
+    # => way less memory used
+
+
+def decode_keys(lis: List[str]) -> Iterator[Tiling]:
+    """Convert tiling keys to tilings."""
+    for key in lis:
+        if not isinstance(key, str):
+            raise TilingDecodeException()
+        try:
+            tiling = Tiling.from_bytes(base64.b64decode(key))
+            yield tiling
+        except (IndexError, TypeError, ValueError) as exc:
+            raise TilingDecodeException() from exc

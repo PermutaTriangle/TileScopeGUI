@@ -1,3 +1,8 @@
+$a-color0: #b0dbff;
+$a-color1: #d1f0af;
+$a-color2: #db8686;
+$a-color3: #fcc997;
+
 svg {
   overflow: visible !important;
 }
@@ -12,6 +17,141 @@ svg {
   width: 24px;
   height: 24px;
   text-align: center;
+
+  // Generated with a script: TODO: Replace with some scss functions
+
+  &.assumption-0 {
+    background-image: linear-gradient(180deg, $a-color0 0px, $a-color0 24px);
+  }
+  &.assumption-1 {
+    background-image: linear-gradient(180deg, $a-color1 0px, $a-color1 24px);
+  }
+  &.assumption-2 {
+    background-image: linear-gradient(180deg, $a-color2 0px, $a-color2 24px);
+  }
+  &.assumption-3 {
+    background-image: linear-gradient(180deg, $a-color3 0px, $a-color3 24px);
+  }
+  &.assumption-01 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 12px,
+      $a-color1 12px,
+      $a-color1 24px
+    );
+  }
+  &.assumption-02 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 12px,
+      $a-color2 12px,
+      $a-color2 24px
+    );
+  }
+  &.assumption-03 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 12px,
+      $a-color3 12px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-12 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color1 0px,
+      $a-color1 12px,
+      $a-color2 12px,
+      $a-color2 24px
+    );
+  }
+  &.assumption-13 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color1 0px,
+      $a-color1 12px,
+      $a-color3 12px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-23 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color2 0px,
+      $a-color2 12px,
+      $a-color3 12px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-012 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 8px,
+      $a-color1 8px,
+      $a-color1 16px,
+      $a-color2 16px,
+      $a-color2 24px
+    );
+  }
+  &.assumption-013 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 8px,
+      $a-color1 8px,
+      $a-color1 16px,
+      $a-color3 16px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-023 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 8px,
+      $a-color2 8px,
+      $a-color2 16px,
+      $a-color3 16px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-123 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color1 0px,
+      $a-color1 8px,
+      $a-color2 8px,
+      $a-color2 16px,
+      $a-color3 16px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-0123 {
+    background-image: linear-gradient(
+      180deg,
+      $a-color0 0px,
+      $a-color0 6px,
+      $a-color1 6px,
+      $a-color1 12px,
+      $a-color2 12px,
+      $a-color2 18px,
+      $a-color3 18px,
+      $a-color3 24px
+    );
+  }
+  &.assumption-x {
+    background-image: repeating-linear-gradient(
+      45deg,
+      #ffffff,
+      #ffffff 6px,
+      #00000080 1px,
+      #00000080 7px
+    );
+  }
 }
 
 .spec-node-label {
@@ -178,4 +318,8 @@ pre {
   body {
     -webkit-print-color-adjust: exact;
   }
+}
+
+#rule-modal div.modal-body {
+  color: wheat;
 }

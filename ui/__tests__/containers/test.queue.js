@@ -109,7 +109,7 @@ test('queue test 1', () => {
 });
 
 test('queue test 2', () => {
-  const queue = new Queue(2);
+  const queue = new Queue();
   queue.enqueue(63696);
   queue.enqueue(69072);
   queue.enqueue(90444);

@@ -11,13 +11,15 @@ import './styles/tiling_display.scss';
  * A component to display a tiling.
  */
 class TilingDisplay {
+  // #region Static functions
+
   /**
    * Convert a GP to a one based with superscript.
    *
    * @param {string} gp
    * @returns {string} one based gp with superscript for positions
    */
-  static fancyGP(gp) {
+  static #fancyGP(gp) {
     if (gp[0] === 'ε') return 'ε';
     const [patt, pos] = gp.split(': ');
     const pattArr = patt.split('').map((x) => +x + 1);
@@ -35,6 +37,35 @@ class TilingDisplay {
     return arr.join('');
   }
 
+  // #endregion
+
+  // #region Private variables
+
+  /** @type {TilingInterface} */
+  #tiling;
+
+  /** @type {AppStateInterface} */
+  #appState;
+
+  /** @type {HTMLDivElement} */
+  #plotDiv;
+
+  /** @type {null|RuleWithoutTilings} */
+  #rule;
+
+  /** @type {(newRule: RuleResponse) => void} */
+  #callback;
+
+  /** @type {JQuery} */
+  #parentDom;
+
+  /** @type {(msg: string) => void} */
+  #errorMsg;
+
+  // #endregion
+
+  // #region Public functions
+
   /**
    * Create tiling display component.
    *
@@ -48,30 +79,28 @@ class TilingDisplay {
    * @param {(msg: string) => void} errorMsg
    */
   constructor(tiling, appState, plotDiv, rule, callback, parentDom, errorMsg) {
-    /** @type {TilingInterface} */
-    this.tiling = tiling;
-    /** @type {AppStateInterface} */
-    this.appState = appState;
-    /** @type {HTMLDivElement} */
-    this.plotDiv = plotDiv;
-    /** @type {null|RuleWithoutTilings} */
-    this.rule = rule;
-    /** @type {(newRule: RuleResponse) => void} */
-    this.callback = callback;
-    /** @type {JQuery} */
-    this.parentDom = parentDom;
-    /** @type {(msg: string) => void} */
-    this.errorMsg = errorMsg;
-    this.plot();
+    this.#tiling = tiling;
+    this.#appState = appState;
+    this.#plotDiv = plotDiv;
+    this.#rule = rule;
+    this.#callback = callback;
+    this.#parentDom = parentDom;
+    this.#errorMsg = errorMsg;
+
+    this.#plot();
   }
+
+  // #endregion
+
+  // #region Private functions
 
   /**
    * Have we already expanded this tiling?
    *
    * @returns {bolean} true if tilings is not on LHS on rule
    */
-  isExpandable() {
-    return this.rule === null;
+  #isExpandable() {
+    return this.#rule === null;
   }
 
   /**
@@ -79,29 +108,29 @@ class TilingDisplay {
    *
    * @returns {boolean} true if tiling is verified
    */
-  isVerified() {
-    return this.tiling.isVerified();
+  #isVerified() {
+    return this.#tiling.isVerified();
   }
 
   /**
    * Add component to dom.
    */
-  plot() {
-    this.addTopFigure();
-    const rOrV = this.ruleOrVerification();
-    this.parentDom.append(`<div class="accordion" id="accordionPanelsStayOpenExample">
-      ${this.tilingInfo()}
+  #plot() {
+    this.#addTopFigure();
+    const rOrV = this.#ruleOrVerification();
+    this.#parentDom.append(`<div class="accordion" id="accordionPanelsStayOpenExample">
+      ${this.#tilingInfo()}
       ${rOrV}
     </div>`);
-    if (!rOrV) this.expansionsStrats();
+    if (!rOrV) this.#expansionsStrats();
   }
 
   /**
    * Add tiling's ascii figure to dom.
    */
-  addTopFigure() {
-    const div = divWrap('top-modal-figure', this.plotDiv);
-    this.parentDom.append(div);
+  #addTopFigure() {
+    const div = divWrap('top-modal-figure', this.#plotDiv);
+    this.#parentDom.append(div);
   }
 
   /**
@@ -109,19 +138,19 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string
    */
-  tilingInfo() {
+  #tilingInfo() {
     const items = [];
-    if (this.tiling.plot.label_map && Object.keys(this.tiling.plot.label_map).length) {
-      items.push(this.cellBasesDiv());
+    if (this.#tiling.plot.label_map && Object.keys(this.#tiling.plot.label_map).length) {
+      items.push(this.#cellBasesDiv());
     }
-    if (this.tiling.plot.crossing?.length) {
-      items.push(this.crossingDiv());
+    if (this.#tiling.plot.crossing?.length) {
+      items.push(this.#crossingDiv());
     }
-    if (this.tiling.plot.requirements?.length) {
-      items.push(this.requirementsDiv());
+    if (this.#tiling.plot.requirements?.length) {
+      items.push(this.#requirementsDiv());
     }
-    if (this.tiling.plot.assumptions?.length) {
-      items.push(this.assumptionsDiv());
+    if (this.#tiling.plot.assumptions?.length) {
+      items.push(this.#assumptionsDiv());
     }
     return items.join('');
   }
@@ -133,12 +162,12 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string or nothing if we can expand
    */
-  ruleOrVerification() {
-    if (this.isVerified()) {
-      return this.verification();
+  #ruleOrVerification() {
+    if (this.#isVerified()) {
+      return this.#verification();
     }
-    if (!this.isExpandable()) {
-      return this.ruleForTiling();
+    if (!this.#isExpandable()) {
+      return this.#ruleForTiling();
     }
     return '';
   }
@@ -148,12 +177,12 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string.
    */
-  cellBasesDiv() {
+  #cellBasesDiv() {
     return accordionItem(
       1,
       'Cell bases',
       bsULFlush(
-        Object.entries(this.tiling.plot.label_map)
+        Object.entries(this.#tiling.plot.label_map)
           .map(([key, value]) => bsLI(`${key}: ${value}`))
           .join(''),
       ),
@@ -165,11 +194,11 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string.
    */
-  crossingDiv() {
+  #crossingDiv() {
     return accordionItem(
       2,
       'Crossing obstructions',
-      bsULFlush(this.tiling.plot.crossing.map((v) => bsLI(TilingDisplay.fancyGP(v))).join('')),
+      bsULFlush(this.#tiling.plot.crossing.map((v) => bsLI(TilingDisplay.#fancyGP(v))).join('')),
     );
   }
 
@@ -178,13 +207,13 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string.
    */
-  requirementsDiv() {
+  #requirementsDiv() {
     return accordionItem(
       3,
       'Requirements',
       bsULFlush(
-        this.tiling.plot.requirements
-          .map((v) => bsLI(v.map((x) => TilingDisplay.fancyGP(x)).join('<br>')))
+        this.#tiling.plot.requirements
+          .map((v) => bsLI(v.map((x) => TilingDisplay.#fancyGP(x)).join('<br>')))
           .join(''),
       ),
     );
@@ -195,13 +224,13 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string.
    */
-  assumptionsDiv() {
+  #assumptionsDiv() {
     return accordionItem(
       4,
       'Assumption',
       bsULFlush(
-        this.tiling.plot.assumptions
-          .map((v) => bsLI(v.map((x) => TilingDisplay.fancyGP(x)).join('<br>')))
+        this.#tiling.plot.assumptions
+          .map((v) => bsLI(v.map((x) => TilingDisplay.#fancyGP(x)).join('<br>')))
           .join(''),
       ),
     );
@@ -212,21 +241,21 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string.
    */
-  verification() {
-    return accordionItem(5, 'Verified', `<div>${this.tiling.verified.formal_step}</div>`);
+  #verification() {
+    return accordionItem(5, 'Verified', `<div>${this.#tiling.verified.formal_step}</div>`);
   }
 
   /**
    * Add an interface for expansions.
    */
-  expansionsStrats() {
+  #expansionsStrats() {
     const strat = new StrategyDisplay(
-      this.tiling,
-      this.appState,
-      this.plotDiv,
-      this.callback,
+      this.#tiling,
+      this.#appState,
+      this.#plotDiv,
+      this.#callback,
       $('.accordion'),
-      this.errorMsg,
+      this.#errorMsg,
     );
     strat.plot();
   }
@@ -236,9 +265,24 @@ class TilingDisplay {
    *
    * @returns {string} raw HTML string.
    */
-  ruleForTiling() {
-    return accordionItem(5, 'Rule', `<div>${this.rule.formalStep}</div>`);
+  #ruleForTiling() {
+    return accordionItem(5, 'Rule', `<div>${this.#rule.formalStep}</div>`);
   }
+
+  // #endregion
 }
 
-export default TilingDisplay;
+/**
+ * @param {TilingInterface} tiling
+ * @param {AppStateInterface} appState
+ * @param {HTMLDivElement} plotDiv
+ * @param {null|RuleWithoutTilings} rule
+ * @param {(newRule: RuleResponse) => void} callback
+ * @param {JQuery} parentDom
+ * @param {(msg: string) => void} errorMsg
+ */
+const displayTiling = (tiling, appState, plotDiv, rule, callback, parentDom, errorMsg) => {
+  (() => new TilingDisplay(tiling, appState, plotDiv, rule, callback, parentDom, errorMsg))();
+};
+
+export default displayTiling;
