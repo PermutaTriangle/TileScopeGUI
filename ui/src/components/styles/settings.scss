@@ -5,3 +5,13 @@
     border: wheat 6px solid;
   }
 }
+
+#verification {
+  ul {
+    list-style-type: None;
+  }
+
+  [type='checkbox'] {
+    margin-right: 10px;
+  }
+}

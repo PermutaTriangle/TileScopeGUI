@@ -109,6 +109,7 @@
  * @property {{patt: string}} cellInsert
  * @property {{dir: 'n'|'w'|'s'|'e', idx: number}} reqPlace
  * @property {{row: boolean}} fusion
+ * @property {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean}} verificationStrategies
  * @property {(patt: string) => void} setCellInsertPatt
  * @property {() => string} getCellInsertPatt
  * @property {(dir: 'n'|'w'|'s'|'e') => void} setRowColPlacementDirection
@@ -121,6 +122,19 @@
  * @property {() => number} getReqPlacementIdx
  * @property {(row: boolean) => void} setFusionRow
  * @property {() => boolean} getFusionRow
+ * @property {(on: boolean) => void} setAtomVerification
+ * @property {() => boolean} getAtomVerification
+ * @property {(on: boolean) => void} setLocallyFactorableVerification
+ * @property {() => boolean} getLocallyFactorableVerification
+ * @property {(on: boolean) => void} setInsertionEncodableVerification
+ * @property {() => boolean} getInsertionEncodableVerification
+ * @property {(on: boolean) => void} setOneByOneVerifciation
+ * @property {() => boolean} getOneByOneVerifciation
+ * @property {(on: boolean) => void} setSubclassVerification
+ * @property {() => boolean} getSubclassVerification
+ * @property {(on: boolean) => void} setShortObstructionVerification
+ * @property {() => boolean} getShortObstructionVerification
+ *
  */
 
 /**
