@@ -1,11 +1,14 @@
 import base64
-from typing import Dict, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
 
 from permuta.patterns.perm import Perm
 from tilings.tiling import Tiling
 
 from ..utils import TilingDecodeException
 from .strategies import verify_to_json
+
+if TYPE_CHECKING:
+    from .verification import VerificationTactics
 
 LabelCache = Dict[Tuple[Tuple[Perm, ...], bool], str]
 
@@ -114,26 +117,32 @@ class Labeller:
             self.assumptions.append(list(str(gp) for gp in assumption.gps))
 
 
-def tiling_to_gui_json(tiling: Tiling) -> dict:
+def tiling_to_gui_json(
+    tiling: Tiling, verification_tactics: "VerificationTactics"
+) -> dict:
     """Convert tiling to a json for the ui."""
     return {
-        "tiling": tiling.to_jsonable(),
         "plot": Labeller.get_gui_format(tiling),
-        "key": base64.b64encode(tiling.to_bytes()).decode("utf-8"),
-        "verified": verify_to_json(tiling),
+        "key": encode_tiling(tiling),
+        "verified": verify_to_json(tiling, verification_tactics),
     }
-    # TODO: stop sending tiling.to_jsonable as js does only need it for exporting
-    # Just make export convert all keys to tiling with a api call before exporting
-    # => way less memory used
+
+
+def encode_tiling(tiling: Tiling) -> str:
+    """Convert a tiling into a unique string."""
+    return base64.b64encode(tiling.to_bytes()).decode("utf-8")
+
+
+def decode_key(key: str) -> Tiling:
+    """Convert tiling key to tiling."""
+    try:
+        tiling = Tiling.from_bytes(base64.b64decode(key))
+        return tiling
+    except (IndexError, TypeError, ValueError) as exc:
+        raise TilingDecodeException() from exc
 
 
 def decode_keys(lis: List[str]) -> Iterator[Tiling]:
     """Convert tiling keys to tilings."""
     for key in lis:
-        if not isinstance(key, str):
-            raise TilingDecodeException()
-        try:
-            tiling = Tiling.from_bytes(base64.b64decode(key))
-            yield tiling
-        except (IndexError, TypeError, ValueError) as exc:
-            raise TilingDecodeException() from exc
+        yield decode_key(key)

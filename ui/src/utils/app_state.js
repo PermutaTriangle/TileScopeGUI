@@ -14,7 +14,7 @@ class AppState {
     this.reqPlace = { dir: 'n', idx: 0 };
     /** @type {{row: boolean }} */
     this.fusion = { row: true };
-    /** @type {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean}} */
+    /** @type {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean, root: string[]}} */
     this.verificationStrategies = {
       atom: true,
       locallyFactorable: true,
@@ -22,6 +22,7 @@ class AppState {
       oneByOne: false,
       subclass: false,
       shortObstruction: false,
+      root: [],
     };
     /** @type {{json: boolean}} */
     this.clipboard = { json: true };
@@ -241,6 +242,24 @@ class AppState {
    */
   getShortObstructionVerification() {
     return this.verificationStrategies.shortObstruction;
+  }
+
+  /**
+   * Set root basis.
+   *
+   * @param {string[]} basis
+   */
+  setRootBasis(basis) {
+    this.verificationStrategies.root = basis;
+  }
+
+  /**
+   * Get root basis.
+   *
+   * @returns {string[]} basis
+   */
+  getRootBasis() {
+    return this.verificationStrategies.root;
   }
 
   /**

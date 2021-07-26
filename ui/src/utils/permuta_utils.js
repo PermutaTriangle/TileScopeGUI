@@ -1,3 +1,5 @@
+import './typedefs';
+
 /**
  * Convert lower case directional letter to number.
  *
@@ -59,4 +61,28 @@ const allSymmetries = () => [
  */
 const isEquivOp = (op) => op === '≅';
 
-export { directionNumberToString, directionStringToNumber, allSymmetries, isEquivOp };
+/**
+ *
+ * @param {AppStateInterface} appState
+ * @returns {VerifyTactics} verification tactics
+ */
+const stateToVerifyTactics = (appState) => {
+  const strats = [];
+  if (appState.getInsertionEncodableVerification()) strats.push(0);
+  if (appState.getLocallyFactorableVerification()) strats.push(1);
+  if (appState.getShortObstructionVerification()) strats.push(2);
+  if (appState.getOneByOneVerifciation()) strats.push(3);
+  if (appState.getSubclassVerification()) strats.push(4);
+  return {
+    basis: appState.getRootBasis(),
+    strats,
+  };
+};
+
+export {
+  directionNumberToString,
+  directionStringToNumber,
+  allSymmetries,
+  isEquivOp,
+  stateToVerifyTactics,
+};

@@ -14,6 +14,7 @@ import displayHelp from './help';
 import '../utils/typedefs';
 
 import './styles/app.scss';
+import { isStr } from '../utils/utils';
 
 /**
  * The main component. It keeps track of states.
@@ -176,8 +177,8 @@ class App {
         this.#errorDisplay.alert(msg);
       },
       async (val) => {
-        const res = await getTiling(val);
-        this.#processResponse(res);
+        const res = await getTiling(val, this.#appState);
+        this.#processResponse(res, val);
       },
     );
   }
@@ -187,10 +188,13 @@ class App {
    *
    * @param {{status: number, data: null|TilingResponse}} res
    */
-  #processResponse(res) {
+  #processResponse(res, val) {
     if (res.status !== statusCode.OK) {
       this.#errorDisplay.alert(App.#statusToMessage(res.status));
     } else {
+      if (isStr(val)) {
+        this.#appState.setRootBasis(val.split('_'));
+      }
       this.#startTree(res.data);
     }
   }
@@ -203,7 +207,6 @@ class App {
   #getRootTilingAsResponse() {
     const root = this.#specTree.getRoot();
     return {
-      tiling: root.tilingJson,
       plot: root.plot,
       key: root.key,
       verified: root.verified,

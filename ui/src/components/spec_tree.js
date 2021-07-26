@@ -477,10 +477,22 @@ class SpecTree {
       this.#classIdToNodeIds[classId].delete(nodeId);
       if (this.#classIdToNodeIds[classId].size === 0) {
         delete this.#classIdToNodeIds[classId];
+        const { key } = this.#spec.getClassById(classId);
+        this.#unverifiedLeaves.delete(key);
         this.#spec.removeClass(classId);
       }
     }
     delete this.#nodeIdToClassId[nodeId];
+  }
+
+  /**
+   * Add key of class back to unverified leaves.
+   *
+   * @param {number} classId
+   */
+  #addBackToUnverifiedLeaves(classId) {
+    const tiling = this.#spec.getClassById(classId);
+    this.#unverifiedLeaves.add(tiling.key);
   }
 
   /**
@@ -489,12 +501,11 @@ class SpecTree {
    * @param {number} classId
    */
   #removeRuleFromNode(nodeId) {
-    console.log(nodeId);
     const classId = this.#nodeIdToClassId[nodeId];
     const children = this.#nodeChildren(nodeId);
 
     // Update complete-spec tracker
-    this.#unverifiedLeaves.add(classId);
+    this.#addBackToUnverifiedLeaves(classId);
 
     // Update colors of nodes
     this.#cleanColorClasses(classId);

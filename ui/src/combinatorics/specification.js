@@ -199,6 +199,9 @@ class Specification {
   }
 
   toSpecificationJson() {
+    console.log('TODO: call server and ask for keys');
+    console.log('Make this accept a key: tilingJson map');
+    if ((() => true)()) return {}; // TODO: remove
     return {
       root: this.tilings[0].tilingJson,
       rules: this.#getJsonableRules(),
