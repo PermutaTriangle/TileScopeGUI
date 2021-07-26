@@ -53,7 +53,6 @@
  * @property {null|VerificationRule} verified
  * @property {() => boolean} isVerified
  * @property {() => string} asciiHTML
- * @property {() => TilingJson} getTilingObject
  */
 
 /**
@@ -72,7 +71,7 @@
  * @property {string} op
  * @property {string} rule_class
  * @property {object} strategy
- * @property {object|OriginalRule} original_rule
+ * @property {undefined|OriginalRule} original_rule
  */
 
 /**
@@ -87,7 +86,7 @@
  * @property {string} classModule
  * @property {object} strategy
  * @property {number[]} children
- * @property {object|OriginalRule} originalRule
+ * @property {undefined|OriginalRule} originalRule
  */
 
 /**

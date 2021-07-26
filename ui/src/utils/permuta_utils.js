@@ -62,6 +62,8 @@ const allSymmetries = () => [
 const isEquivOp = (op) => op === '≅';
 
 /**
+ * Convert app state to verification strategies constants
+ * understood by the api.
  *
  * @param {AppStateInterface} appState
  * @returns {VerifyTactics} verification tactics
