@@ -27,12 +27,25 @@ def tiling_from_basis() -> dict:
 
 
 @tiling_blueprint.route("/decode", methods=["POST"])
-def tilings_from_keys() -> List[Tiling]:
+def tilings_from_keys() -> List[dict]:
     """Given a list of encodes keys, convert to tilings."""
     data: Optional[List[str]] = request.get_json()
     if data is None or not isinstance(data, list):
         raise BadRequest()
     try:
-        return list(decode_keys(data))
+        return [tiling.to_jsonable() for tiling in decode_keys(data)]
     except TilingDecodeException as exc:
+        raise BadRequest() from exc
+
+
+@tiling_blueprint.route("/repr", methods=["POST"])
+def tiling_repl() -> str:
+    """Given an encoded key, convert to repl"""
+    data: Optional[str] = request.get_json()
+    if data is None or not isinstance(data, str):
+        raise BadRequest()
+    try:
+        tiling: Tiling = next(decode_keys([data]))
+        return repr(tiling)
+    except (StopIteration, TilingDecodeException) as exc:
         raise BadRequest() from exc

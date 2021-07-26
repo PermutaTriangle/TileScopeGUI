@@ -110,6 +110,7 @@
  * @property {{dir: 'n'|'w'|'s'|'e', idx: number}} reqPlace
  * @property {{row: boolean}} fusion
  * @property {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean}} verificationStrategies
+ * @property {{json: boolean}} clipboard
  * @property {(patt: string) => void} setCellInsertPatt
  * @property {() => string} getCellInsertPatt
  * @property {(dir: 'n'|'w'|'s'|'e') => void} setRowColPlacementDirection
@@ -134,7 +135,8 @@
  * @property {() => boolean} getSubclassVerification
  * @property {(on: boolean) => void} setShortObstructionVerification
  * @property {() => boolean} getShortObstructionVerification
- *
+ * @property {(json: boolean) => void} setClipboardCopy
+ * @property {() => boolean} getClipboardCopy
  */
 
 /**

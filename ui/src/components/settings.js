@@ -22,6 +22,9 @@ const displaySettings = (appState) => {
   const checkSC = () => (appState.getSubclassVerification() ? ' checked' : '');
   const checkSO = () => (appState.getShortObstructionVerification() ? ' checked' : '');
 
+  const checkJson = () => (appState.getClipboardCopy() ? ' checked' : '');
+  const checkRepl = () => (!appState.getClipboardCopy() ? ' checked' : '');
+
   const body = () => `<div id="verification">
   <label>Verification strategies</label>
   <ul>
@@ -32,7 +35,24 @@ const displaySettings = (appState) => {
     <li><input type="checkbox"${checkSC()}>Subclass</li>
     <li><input type="checkbox"${checkSO()}>Short obstruction</li>
   </ul>
-</div>`;
+</div>
+<div id="clipboardsetting">
+  <label>Clipboard copy as:</label>
+  <div>
+    <input type="radio" id="json-copy" name="clipboard" value="json"${checkJson()}>
+    <label for="json-copy">Json</label>
+    <input type="radio" id="repl-copy" name="clipboard" value="repl"${checkRepl()}>
+    <label for="repl-copy">Repl</label>
+  </div>
+</div>
+`;
+
+  const setCopyCallback = () => {
+    $('#clipboardsetting input[type=radio][name=clipboard]').on('change', () => {
+      appState.setClipboardCopy(!appState.getClipboardCopy());
+      console.log(appState.clipboard);
+    });
+  };
 
   const setToggleCallbacks = () => {
     $('#verification > ul > li > input[type=checkbox]').on('change', (evt) => {
@@ -72,6 +92,7 @@ const displaySettings = (appState) => {
     }))();
 
   setToggleCallbacks();
+  setCopyCallback();
 };
 
 export default displaySettings;

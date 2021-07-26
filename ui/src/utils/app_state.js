@@ -23,6 +23,8 @@ class AppState {
       subclass: false,
       shortObstruction: false,
     };
+    /** @type {{json: boolean}} */
+    this.clipboard = { json: true };
   }
 
   /**
@@ -239,6 +241,25 @@ class AppState {
    */
   getShortObstructionVerification() {
     return this.verificationStrategies.shortObstruction;
+  }
+
+  /**
+   * Set the clipboard copy output. True is json,
+   * false is repl.
+   *
+   * @param {boolean} json
+   */
+  setClipboardCopy(json) {
+    this.clipboard.json = json;
+  }
+
+  /**
+   * Is the clipboard copy set to json (if not, it is set to repl).
+   *
+   * @returns {boolean} is json
+   */
+  getClipboardCopy() {
+    return this.clipboard.json;
   }
 }
 

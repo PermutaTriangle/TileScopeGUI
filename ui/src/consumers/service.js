@@ -19,6 +19,15 @@ const getTiling = async (basisOrJson) => apiPost('/tiling/init', basisOrJson);
  * @returns {Promise.<{status: number, data: object}>}
  */
 const decodeTilings = async (tilingKeys) => apiPost('/tiling/decode', tilingKeys);
+// TODO: list of tilingjson
+
+/**
+ * Convert key to a repl of tiling.
+ *
+ * @param {string} tilingKey
+ * @returns {Promise.<{status: number, data: string|null}>}
+ */
+const replOfTiling = async (tilingKey) => apiPost('/tiling/repl', tilingKey);
 
 /**
  * An endpoint for getting row/col placement rule given a tiling.
@@ -148,6 +157,7 @@ const rearrangeAssumption = async (tilingJson) =>
 export {
   getTiling,
   decodeTilings,
+  replOfTiling,
   rowColPlacement,
   factor,
   cellInsertion,

@@ -7,6 +7,6 @@
 # 6. Refactor
 # 7. Testing
 # 8. Styling not as horrible
-# 9. Help button in bar
+# 9.
 # 10: Options button in bar
 # 11. More verification strats, optional some... (1x1 for example)
