@@ -162,17 +162,6 @@ class SpecTree {
   }
 
   /**
-   * Convert operator to `cong` if single child disjoint union.
-   *
-   * @param {number} numberOfChildren
-   * @param {Rule} rule
-   * @returns {string} op
-   */
-  static #getRuleOp(numberOfChildren, rule) {
-    return numberOfChildren === 1 && rule.op === '+' ? '≅' : rule.op;
-  }
-
-  /**
    * Create a modal from rule.
    *
    * @param {RuleWithoutTilings} modalRule
@@ -488,10 +477,22 @@ class SpecTree {
       this.#classIdToNodeIds[classId].delete(nodeId);
       if (this.#classIdToNodeIds[classId].size === 0) {
         delete this.#classIdToNodeIds[classId];
+        const { key } = this.#spec.getClassById(classId);
+        this.#unverifiedLeaves.delete(key);
         this.#spec.removeClass(classId);
       }
     }
     delete this.#nodeIdToClassId[nodeId];
+  }
+
+  /**
+   * Add key of class back to unverified leaves.
+   *
+   * @param {number} classId
+   */
+  #addBackToUnverifiedLeaves(classId) {
+    const tiling = this.#spec.getClassById(classId);
+    this.#unverifiedLeaves.add(tiling.key);
   }
 
   /**
@@ -500,12 +501,11 @@ class SpecTree {
    * @param {number} classId
    */
   #removeRuleFromNode(nodeId) {
-    console.log(nodeId);
     const classId = this.#nodeIdToClassId[nodeId];
     const children = this.#nodeChildren(nodeId);
 
     // Update complete-spec tracker
-    this.#unverifiedLeaves.add(classId);
+    this.#addBackToUnverifiedLeaves(classId);
 
     // Update colors of nodes
     this.#cleanColorClasses(classId);
@@ -537,6 +537,17 @@ class SpecTree {
   }
 
   /**
+   * Set click event for a new tiling node.
+   *
+   * @param {number} nodeId
+   */
+  #setClickEventForNode(nodeId) {
+    $(`#spec-node-${nodeId}`).on('click', () => {
+      this.#viewNodeEventHandler(nodeId);
+    });
+  }
+
+  /**
    * Called on click for class nodes.
    *
    * @param {number} nodeId
@@ -545,17 +556,6 @@ class SpecTree {
     const { html, tiling, rule } = this.#getNodeMeta(nodeId);
     viewClassNode(tiling, this.#appState, html, rule, this.#errorDisplay, (newRule) => {
       this.#extendNode(nodeId, newRule);
-    });
-  }
-
-  /**
-   * Set click event for a new tiling node.
-   *
-   * @param {number} nodeId
-   */
-  #setClickEventForNode(nodeId) {
-    $(`#spec-node-${nodeId}`).on('click', () => {
-      this.#viewNodeEventHandler(nodeId);
     });
   }
 
@@ -639,7 +639,7 @@ class SpecTree {
     this.#updateDuplicates(classId, nodeId);
 
     // Add rule node
-    const parent = this.#addRuleNode(nodeId, classId, children.length, rule);
+    const parent = this.#addRuleNode(nodeId, classId, rule);
 
     // Add child nodes
     this.#addChildNodes(children, newClasses, parent);
@@ -651,27 +651,24 @@ class SpecTree {
   /**
    * Treant data for rule.
    *
-   * @param {number} numberOfChildren
    * @param {Rule} rule
    * @returns {TreantNodeData} data
    */
-  #ruleNodeData(numberOfChildren, rule) {
+  #ruleNodeData(rule) {
     const key = this.#treant.getNextKey();
-    const op = SpecTree.#getRuleOp(numberOfChildren, rule);
-    return SpecTree.#treantRuleNodeData(op, key);
+    return SpecTree.#treantRuleNodeData(rule.op, key);
   }
 
   /**
    * Add rule to treant.
    *
    * @param {number} nodeId
-   * @param {number} numberOfChildren
    * @param {Rule} rule
    * @returns {{parentNodeId: number, newNode: any}}
    */
-  #addRuleToTreant(nodeId, numberOfChildren, rule) {
+  #addRuleToTreant(nodeId, rule) {
     const parentNode = this.#treant.getNode(nodeId);
-    const ruleData = this.#ruleNodeData(numberOfChildren, rule);
+    const ruleData = this.#ruleNodeData(rule);
     const ruleNode = this.#treant.add(parentNode, ruleData);
     return { parentNodeId: parentNode.id, newNode: ruleNode };
   }
@@ -711,12 +708,11 @@ class SpecTree {
    *
    * @param {number} nodeId
    * @param {number} classId
-   * @param {number} numberOfChildren
    * @param {Rule} rule
    * @returns {any} the treant node of rule
    */
-  #addRuleNode(nodeId, classId, numberOfChildren, rule) {
-    const { parentNodeId, newNode } = this.#addRuleToTreant(nodeId, numberOfChildren, rule);
+  #addRuleNode(nodeId, classId, rule) {
+    const { parentNodeId, newNode } = this.#addRuleToTreant(nodeId, rule);
     this.#nodeIdToClassId[newNode.id] = classId;
     this.#setRuleOnClickListener(newNode.id, parentNodeId);
     return newNode;

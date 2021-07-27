@@ -1,7 +1,7 @@
 import pytest
 
-from tests.utils.mocks.mock_client import client_generator
-from tests.utils.test_utils import is_win, trim
+from tests.testutils.mocks.mock_client import client_generator
+from tests.testutils.test_utils import is_win, trim
 
 
 @pytest.fixture

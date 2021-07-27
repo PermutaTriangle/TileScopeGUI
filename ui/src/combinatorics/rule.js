@@ -6,6 +6,39 @@ import '../utils/typedefs';
  * A JS representtion of a rule.
  */
 class Rule {
+  static #DISJOINT_UNION_OP = '+';
+
+  static #EQUIVALENCE_OP = '≅';
+
+  static #ORIGINAL_RULE_KEY = 'original_rule';
+
+  /**
+   * If the rule is a disjoint union with one child, convert the
+   * op to an equivalence one. Otherwise the original op is returned.
+   *
+   * @param {RuleResponse} jsonObject
+   * @returns {string} op
+   */
+  static #getOp(jsonObject) {
+    if (jsonObject.children.length === 1 && jsonObject.op === Rule.#DISJOINT_UNION_OP) {
+      return Rule.#EQUIVALENCE_OP;
+    }
+    return jsonObject.op;
+  }
+
+  /**
+   * Extract original rule if exists.
+   *
+   * @param {RuleResponse} jsonObject
+   * @returns {object|undefined} original rule
+   */
+  static #getOriginalRule(jsonObject) {
+    if (Rule.#ORIGINAL_RULE_KEY in jsonObject) {
+      return jsonObject.original_rule;
+    }
+    return undefined;
+  }
+
   /**
    * Create a rule from a server response object.
    *
@@ -24,9 +57,9 @@ class Rule {
     /** @type {object} */
     this.strategy = jsonObject.strategy;
     /** @type {string} */
-    this.op = this.children.length === 1 && jsonObject.op === '+' ? '≅' : jsonObject.op;
-    /** @type {undefined|object} */
-    this.originalRule = 'original_rule' in jsonObject ? jsonObject.original_rule : undefined;
+    this.op = Rule.#getOp(jsonObject);
+    /** @type {undefined|OriginalRule} */
+    this.originalRule = Rule.#getOriginalRule(jsonObject);
   }
 
   /**

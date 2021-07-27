@@ -6,6 +6,7 @@ class Config:
     STATIC_FOLDER = "static"
     CACHE_TYPE = "simple"
     CACHE_DEFAULT_TIMEOUT = 3600
+    QUIET = False
 
 
 class ProdConfig(Config):
@@ -15,6 +16,7 @@ class ProdConfig(Config):
     FLASK_ENV = "production"
     DEBUG = False
     TESTING = False
+    QUIET = True
 
 
 class DevConfig(Config):

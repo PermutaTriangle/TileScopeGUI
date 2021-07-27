@@ -1,0 +1,35 @@
+@import './variables.scss';
+
+#help-modal {
+  color: wheat;
+
+  .modal-content {
+    border: wheat 6px solid;
+  }
+
+  ul {
+    list-style-type: None;
+  }
+
+  li:nth-child(1)::before {
+    background-color: $label-default;
+  }
+  li:nth-child(2)::before {
+    background-color: $label-verified;
+  }
+  li:nth-child(3)::before {
+    background-color: $label-duplicate;
+  }
+  li:nth-child(4)::before {
+    background-color: $label-todo;
+  }
+
+  li::before {
+    display: inline-block;
+    vertical-align: middle;
+    width: 15px;
+    height: 15px;
+    margin-right: 8px;
+    content: ' ';
+  }
+}

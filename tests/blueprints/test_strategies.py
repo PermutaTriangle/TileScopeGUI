@@ -1,13 +1,17 @@
 import json
+from typing import Any
 
 import pytest
-from tilings import GriddedPerm, Tiling, TrackingAssumption
+from tilings import GriddedPerm, Tiling
 
-from tests.utils.mocks.mock_client import client_generator
+from tests.testutils.mocks.mock_client import client_generator
+from tilescopegui.combinatorics.tilings import encode_tiling
 
 _HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
 
 _PATH_PREFIX = "/api/strategies"
+
+_EMPTY_VERIFY = {"strats": [], "basis": []}
 
 
 def invalid_tilings():
@@ -31,6 +35,14 @@ def client():
     yield from client_generator()
 
 
+def verify_wrap_tiling(tiling: Tiling) -> dict:
+    return {"tiling": encode_tiling(tiling), "verify": _EMPTY_VERIFY}
+
+
+def verify_wrap_invalid(invalid_tiling: Any) -> dict:
+    return {"tiling": invalid_tiling, "verify": _EMPTY_VERIFY}
+
+
 def post(cli, path: str, data, headers=_HEADERS):
     return cli.post(path, data=json.dumps(data), headers=headers)
 
@@ -42,6 +54,9 @@ def assert_code_and_mimetype(res, mimetype="application/json", code=200):
 
 def test_factor_invalid_type(client):
     for inp in invalid_tilings():
+        assert_code_and_mimetype(
+            post(client, f"{_PATH_PREFIX}/factor", verify_wrap_invalid(inp)), code=400
+        )
         assert_code_and_mimetype(post(client, f"{_PATH_PREFIX}/factor", inp), code=400)
 
 
@@ -56,7 +71,7 @@ def test_factor_does_not_apply(client):
         assumptions=(),
     )
     assert_code_and_mimetype(
-        post(client, f"{_PATH_PREFIX}/factor", t.to_jsonable()), code=400
+        post(client, f"{_PATH_PREFIX}/factor", verify_wrap_tiling(t)), code=400
     )
     assert_code_and_mimetype(
         post(client, f"{_PATH_PREFIX}/factor?interleaving=all", t.to_jsonable()),
@@ -69,7 +84,7 @@ def test_factor(client):
         res = post(
             cli,
             f"{_PATH_PREFIX}/factor{'?interleaving=all' if interleaving else ''}",
-            t.to_jsonable(),
+            verify_wrap_tiling(t),
         )
         assert_code_and_mimetype(res)
         assert res.json["class_module"] == "comb_spec_searcher.strategies.rule"
@@ -178,12 +193,25 @@ def test_row_col_placement_invalid_type(client):
         [],
         {},
         *[{"tiling": x for x in invalid_tilings()}],
-        {"tiling": Tiling().to_jsonable()},
-        {"tiling": Tiling().to_jsonable(), "dir": 1},
-        {"tiling": Tiling().to_jsonable(), "dir": 1, "row": 1},
+        {"tiling": encode_tiling(Tiling())},
+        {"tiling": encode_tiling(Tiling()), "dir": 1},
+        {"tiling": encode_tiling(Tiling()), "dir": 1, "row": 1},
     ]:
         assert_code_and_mimetype(
-            post(client, f"{_PATH_PREFIX}/rowcolplace", invalid_object), code=400
+            post(
+                client,
+                f"{_PATH_PREFIX}/rowcolplace",
+                verify_wrap_invalid(invalid_object),
+            ),
+            code=400,
+        )
+        assert_code_and_mimetype(
+            post(
+                client,
+                f"{_PATH_PREFIX}/rowcolplace",
+                invalid_object,
+            ),
+            code=400,
         )
     valid_tiling = Tiling(
         obstructions=(
@@ -195,23 +223,28 @@ def test_row_col_placement_invalid_type(client):
         ),
         requirements=(),
         assumptions=(),
-    ).to_jsonable()
+    )
     for data in (
-        {"tiling": valid_tiling, "dir": d, "row": True, "idx": 0}
+        {"tiling": encode_tiling(valid_tiling), "dir": d, "row": True, "idx": 0}
         for d in invalid_dirs()
     ):
+        data["verify"] = _EMPTY_VERIFY
         assert_code_and_mimetype(
             post(client, f"{_PATH_PREFIX}/rowcolplace", data), code=400
         )
     for data in (
-        {"tiling": valid_tiling, "dir": 1, "row": r, "idx": 0} for r in invalid_rows()
+        {"tiling": encode_tiling(valid_tiling), "dir": 1, "row": r, "idx": 0}
+        for r in invalid_rows()
     ):
+        data["verify"] = _EMPTY_VERIFY
         assert_code_and_mimetype(
             post(client, f"{_PATH_PREFIX}/rowcolplace", data), code=400
         )
     for data in (
-        {"tiling": valid_tiling, "dir": 1, "row": True, "idx": i} for i in invalid_idx()
+        {"tiling": encode_tiling(valid_tiling), "dir": 1, "row": True, "idx": i}
+        for i in invalid_idx()
     ):
+        data["verify"] = _EMPTY_VERIFY
         assert_code_and_mimetype(
             post(client, f"{_PATH_PREFIX}/rowcolplace", data), code=400
         )
@@ -219,7 +252,13 @@ def test_row_col_placement_invalid_type(client):
         post(
             client,
             f"{_PATH_PREFIX}/rowcolplace",
-            {"tiling": valid_tiling, "dir": 0, "row": True, "idx": 2},
+            {
+                "tiling": encode_tiling(valid_tiling),
+                "dir": 0,
+                "row": True,
+                "idx": 2,
+                "verify": _EMPTY_VERIFY,
+            },
         ),
         code=400,
     )
@@ -227,7 +266,13 @@ def test_row_col_placement_invalid_type(client):
         post(
             client,
             f"{_PATH_PREFIX}/rowcolplace",
-            {"tiling": valid_tiling, "dir": 0, "row": False, "idx": 2},
+            {
+                "tiling": encode_tiling(valid_tiling),
+                "verify": _EMPTY_VERIFY,
+                "dir": 0,
+                "row": False,
+                "idx": 2,
+            },
         ),
         code=400,
     )
@@ -235,7 +280,13 @@ def test_row_col_placement_invalid_type(client):
         post(
             client,
             f"{_PATH_PREFIX}/rowcolplace",
-            {"tiling": valid_tiling, "dir": 0, "row": True, "idx": -1},
+            {
+                "tiling": encode_tiling(valid_tiling),
+                "verify": _EMPTY_VERIFY,
+                "dir": 0,
+                "row": True,
+                "idx": -1,
+            },
         ),
         code=400,
     )
@@ -247,7 +298,8 @@ def test_row_col_placement_does_not_apply(client):
             client,
             f"{_PATH_PREFIX}/rowcolplace",
             {
-                "tiling": Tiling.from_string("123").to_jsonable(),
+                "tiling": encode_tiling(Tiling.from_string("123")),
+                "verify": _EMPTY_VERIFY,
                 "dir": d,
                 "row": r,
                 "idx": 0,
@@ -262,11 +314,14 @@ def test_row_placement(client):
 
 def test_row_placement_eq_rule(client):
     data = {
-        "tiling": Tiling(
-            obstructions=(GriddedPerm((0, 1, 2), ((0, 0), (0, 0), (0, 0))),),
-            requirements=((GriddedPerm((0,), ((0, 0),)),),),
-            assumptions=(),
-        ).to_jsonable(),
+        "tiling": encode_tiling(
+            Tiling(
+                obstructions=(GriddedPerm((0, 1, 2), ((0, 0), (0, 0), (0, 0))),),
+                requirements=((GriddedPerm((0,), ((0, 0),)),),),
+                assumptions=(),
+            )
+        ),
+        "verify": _EMPTY_VERIFY,
         "row": True,
         "idx": 0,
         "dir": 1,
@@ -276,7 +331,7 @@ def test_row_placement_eq_rule(client):
     assert res.json["op"] == "+"
     assert all(
         prop in res.json["original_rule"]
-        for prop in ["children", "class_module", "rule_class", "comb_class", "strategy"]
+        for prop in ["children", "class_module", "rule_class", "strategy"]
     )
     assert (
         res.json["formal_step"]

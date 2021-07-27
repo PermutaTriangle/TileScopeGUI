@@ -149,7 +149,7 @@ class StrategyDisplay {
     const content = `<button id="obstra">Obstruction transivity</button>`;
     this.parentDom.append(accordionItem(acId, 'Obstruction transivity', content));
     $('#obstra').on('click', async () => {
-      const res = await obstructionTransivity(this.tiling.tilingJson);
+      const res = await obstructionTransivity(this.tiling.key, this.appState);
       this.handleResponse(res);
     });
   }
@@ -166,7 +166,7 @@ class StrategyDisplay {
     this.parentDom.append(accordionItem(acId, 'Cell insertion', content));
     $('#cell-ins-fig .non-empty-cell').on('click', async (evt) => {
       const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
-      const res = await cellInsertion(this.tiling.tilingJson, x, y, '0');
+      const res = await cellInsertion(this.tiling.key, this.appState, x, y, '0');
       this.handleResponse(res);
     });
   }
@@ -179,11 +179,11 @@ class StrategyDisplay {
     const content = `<div><button id="factor">Factor</button><button id="factorint">Interleaving</button></div>`;
     this.parentDom.append(accordionItem(acId, 'Factor', content));
     $('#factor').on('click', async () => {
-      const res = await factor(this.tiling.tilingJson);
+      const res = await factor(this.tiling.key, this.appState);
       this.handleResponse(res);
     });
     $('#factorint').on('click', async () => {
-      const res = await factor(this.tiling.tilingJson, true);
+      const res = await factor(this.tiling.key, this.appState, true);
       this.handleResponse(res);
     });
   }
@@ -235,7 +235,7 @@ class StrategyDisplay {
       const row = this.appState.getRowColPlacementRow();
       const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
       const idx = row ? y : x;
-      const res = await rowColPlacement(this.tiling.tilingJson, dir, row, idx);
+      const res = await rowColPlacement(this.tiling.key, this.appState, dir, row, idx);
       this.handleResponse(res);
     });
   }
@@ -253,7 +253,7 @@ class StrategyDisplay {
     const content = `<button id="separate">Separate</button>`;
     this.parentDom.append(accordionItem(acId, 'Row/Column separation', content));
     $('#separate').on('click', async () => {
-      const res = await rowColSeparation(this.tiling.tilingJson);
+      const res = await rowColSeparation(this.tiling.key, this.appState);
       this.handleResponse(res);
     });
   }
@@ -285,7 +285,7 @@ class StrategyDisplay {
       const dir = directionStringToNumber(this.appState.getReqPlacementDirection());
       const idx = this.appState.getReqPlacementIdx();
       const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
-      const res = await reqPlacement(this.tiling.tilingJson, x, y, idx, dir);
+      const res = await reqPlacement(this.tiling.key, this.appState, x, y, idx, dir);
       this.handleResponse(res);
     });
   }
@@ -315,7 +315,7 @@ class StrategyDisplay {
       if (pos.length === 0) {
         this.errorMsg('No assumption added');
       } else {
-        const res = await addAssumption(this.tiling.tilingJson, pos);
+        const res = await addAssumption(this.tiling.key, this.appState, pos);
         this.handleResponse(res);
       }
     });
@@ -347,7 +347,7 @@ class StrategyDisplay {
       const [x, y] = StrategyDisplay.getCoordsFromCellClickEvent(evt.currentTarget.className);
       const row = this.appState.getFusionRow();
       const idx = row ? y : x;
-      const res = await fusion(this.tiling.tilingJson, idx, row);
+      const res = await fusion(this.tiling.key, this.appState, idx, row);
       this.handleResponse(res);
     });
   }
@@ -379,7 +379,7 @@ class StrategyDisplay {
       } else {
         const [idx1, idx2] =
           pos[0][0] === pos[1][0] ? [pos[0][1], pos[1][1]] : [pos[0][0], pos[1][0]];
-        const res = await sliding(this.tiling.tilingJson, idx1, idx2);
+        const res = await sliding(this.tiling.key, this.appState, idx1, idx2);
         this.handleResponse(res);
       }
     });
@@ -399,7 +399,7 @@ class StrategyDisplay {
     syms.forEach(([, id]) => {
       $(`#symmetry-btn-${id}`).on('click', async (evt) => {
         const symType = parseInt(evt.currentTarget.id.slice(-1), 10);
-        const res = await symmetries(this.tiling.tilingJson, symType);
+        const res = await symmetries(this.tiling.key, this.appState, symType);
         this.handleResponse(res);
       });
     });
@@ -413,7 +413,7 @@ class StrategyDisplay {
     const content = `<button id="rearrassump">Rearrange Assumption</button>`;
     this.parentDom.append(accordionItem(acId, 'Rearrange Assumption', content));
     $('#rearrassump').on('click', async () => {
-      const res = await rearrangeAssumption(this.tiling.tilingJson);
+      const res = await rearrangeAssumption(this.tiling.key, this.appState);
       this.handleResponse(res);
     });
   }

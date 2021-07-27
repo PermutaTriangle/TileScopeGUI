@@ -277,6 +277,7 @@ pre {
   margin: 50% auto;
 }
 
+// TODO: REMOVE
 .rule-node:empty {
   background-image: repeating-linear-gradient(
     -45deg,
@@ -287,6 +288,7 @@ pre {
   );
 }
 
+// TODO: REMOVE
 .tooltip {
   transform: perspective(1px) scale(1.1);
   max-width: 800px;
@@ -300,6 +302,7 @@ pre {
   pointer-events: all;
 }
 
+// TODO: REMOVE
 .tooltip-inner {
   overflow: visible;
   background-color: white;

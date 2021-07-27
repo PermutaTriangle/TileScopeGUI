@@ -1,10 +1,62 @@
 import { isEquivOp } from '../utils/permuta_utils';
+
 import '../utils/typedefs';
 
 /**
  * A JS representation of a partial specification.
  */
 class Specification {
+  /**
+   *
+   * @param {TilingInterface} currTiling
+   * @param {OriginalRule} originalRule
+   * @param {Dictionary} keyMap
+   */
+  static #originalRuleToJsonable(currTiling, originalRule, keyMap) {
+    const ruleJson = { ...originalRule };
+    delete ruleJson.children;
+    ruleJson.children = originalRule.children.map((cKey) => keyMap.get(cKey));
+    ruleJson.comb_class = keyMap.get(currTiling.key);
+    return ruleJson;
+  }
+
+  /**
+   * @param {Dictionary} dict
+   */
+  static #addEmpty(dict) {
+    const emptyKey = 'AQABAAAAAAA=';
+    if (!dict.contains(emptyKey)) {
+      const emptyTilingJson = {
+        class_module: 'tilings.tiling',
+        comb_class: 'Tiling',
+        obstructions: [{ patt: [0], pos: [[0, 0]] }],
+        requirements: [],
+        assumptions: [],
+      };
+      dict.set(emptyKey, emptyTilingJson);
+    }
+  }
+
+  /**
+   *
+   * @param {TilingInterface} currTiling
+   * @param {Dictionary} keyMap
+   * @returns
+   */
+  static #verificationRule(currTiling, keyMap) {
+    const rule = { ...currTiling.verified };
+    delete rule.formal_step;
+    rule.comb_class = keyMap.get(currTiling.key);
+    return rule;
+  }
+
+  static #getJsonableRulesInit() {
+    const rules = [];
+    const visited = new Set([0]);
+    const stack = [0];
+    return { rules, visited, stack };
+  }
+
   /**
    * Create a partial specification from root.
    *
@@ -19,6 +71,15 @@ class Specification {
     this.tilingIndex[initialTiling.key] = 0;
     /** @type {Object.<number, RuleWithoutTilings>} */
     this.rules = {};
+  }
+
+  /**
+   * Get all tiling keys in the (possibly partial) specification.
+   *
+   * @returns {string[]} keys
+   */
+  allTilingKeys() {
+    return Object.keys(this.tilingIndex);
   }
 
   /**
@@ -149,12 +210,7 @@ class Specification {
     const idx = this.indexOfKey(childKey);
     if (idx === -1) return false;
     if (idx === parentId) return true;
-    let rule = this.getRuleByLHS(idx);
-    while (rule !== null && rule.children.length === 1) {
-      if (rule.children[0] === parentId) return true;
-      rule = this.getRuleByLHS(rule.children[0]);
-    }
-    return false;
+    return this.#parentBelowInSingleChildPath(idx, parentId);
   }
 
   /**
@@ -165,60 +221,53 @@ class Specification {
    * @returns {boolean[]} array of booleans representing if child is new in spec
    */
   addRule(parent, rule) {
-    const array = [];
-    const newClasses = [];
-    const newSiblings = {};
+    const [childIds, newClasses, newSiblings] = [[], [], {}];
     rule.children.forEach((child) => {
       let idx = this.indexOfKey(child.key);
       if (idx < 0) {
         idx = this.addNewClass(child);
         newClasses.push(true);
-        newSiblings[`${idx}`] = null;
+        newSiblings[idx] = null;
       } else {
-        newClasses.push(`${idx}` in newSiblings);
+        newClasses.push(idx in newSiblings);
       }
-      array.push(idx);
+      childIds.push(idx);
     });
-    this.rules[parent] = rule.withoutTilings(array);
+    this.rules[parent] = rule.withoutTilings(childIds);
     return newClasses;
-  }
-
-  toSpecificationJson() {
-    return {
-      root: this.tilings[0].tilingJson,
-      rules: this.#getJsonableRules(),
-    };
   }
 
   /**
    *
+   * @param {Dictionary} keyMap
+   * @returns {{root: TilingJson, rules: object[]}}
    */
-  #getJsonableRules() {
-    const rules = [];
-    const visited = new Set([0]);
-    const stack = [0];
+  toSpecificationJson(keyMap) {
+    Specification.#addEmpty(keyMap);
+    return {
+      root: keyMap.get(this.tilings[0].key),
+      rules: this.#getJsonableRules(keyMap),
+    };
+  }
+
+  #getJsonableRules(keyMap) {
+    const { rules, visited, stack } = Specification.#getJsonableRulesInit();
     while (stack.length > 0) {
       const curr = stack.pop();
       const currTiling = this.tilings[curr];
       if (this.hasChildren(curr)) {
-        this.#jsonExpand(curr, currTiling, visited, stack, rules);
+        this.#jsonExpand(curr, currTiling, visited, stack, rules, keyMap);
       } else if (currTiling.isVerified()) {
-        const rule = { ...currTiling.verified };
-        delete rule.formal_step;
-        rules.push(rule);
+        rules.push(Specification.#verificationRule(currTiling, keyMap));
       }
     }
     return rules;
   }
 
-  #jsonExpand(curr, currTiling, visited, stack, rules) {
+  #jsonExpand(curr, currTiling, visited, stack, rules, keyMap) {
     const rule = this.rules[curr];
     if (isEquivOp(rule.op)) {
-      rules.push({
-        class_module: 'comb_spec_searcher.strategies.rule',
-        rule_class: 'EquivalencePathRule',
-        rules: this.#gatherEquivRules(currTiling, rule, visited, stack),
-      });
+      rules.push(this.#constructEquivalencePath(currTiling, rule, visited, stack, keyMap));
     } else {
       rule.children.forEach((c) => {
         if (!visited.has(c)) {
@@ -226,20 +275,40 @@ class Specification {
           stack.push(c);
         }
       });
-      rules.push(this.#ruleToJsonable(rule, currTiling));
+      rules.push(this.#ruleToJsonable(rule, currTiling, keyMap));
     }
   }
 
-  #ruleToJsonable(rule, currTiling) {
-    const ruleObj = {
-      class_module: rule.classModule,
-      rule_class: rule.ruleClass,
-      comb_class: currTiling.tilingJson,
-      children: rule.children.map((c) => this.tilings[c].tilingJson),
-      strategy: rule.strategy,
+  #constructEquivalencePath(currTiling, rule, visited, stack, keyMap) {
+    return {
+      class_module: 'comb_spec_searcher.strategies.rule',
+      rule_class: 'EquivalencePathRule',
+      rules: this.#gatherEquivRules(currTiling, rule, visited, stack, keyMap),
     };
+  }
+
+  #gatherEquivRules(currTiling, rule, visited, stack, keyMap) {
+    const rules = [this.#ruleToJsonable(rule, currTiling, keyMap)];
+    let nxt = rule.children[0];
+    let nxtRule = this.rules[nxt];
+    while (this.hasChildren(nxt) && isEquivOp(nxtRule.op)) {
+      rules.push(this.#ruleToJsonable(nxtRule, this.tilings[nxt], keyMap));
+      [nxt] = nxtRule.children;
+      nxtRule = this.rules[nxt];
+    }
+    visited.add(nxt);
+    stack.push(nxt);
+    return rules;
+  }
+
+  #ruleToJsonable(rule, currTiling, keyMap) {
+    const ruleObj = this.#constructJsonObject(rule, currTiling, keyMap);
     if (rule.originalRule !== undefined) {
-      ruleObj.original_rule = rule.originalRule;
+      ruleObj.original_rule = Specification.#originalRuleToJsonable(
+        currTiling,
+        rule.originalRule,
+        keyMap,
+      );
       delete ruleObj.comb_class;
       delete ruleObj.children;
       delete ruleObj.strategy;
@@ -247,18 +316,29 @@ class Specification {
     return ruleObj;
   }
 
-  #gatherEquivRules(currTiling, rule, visited, stack) {
-    const rules = [this.#ruleToJsonable(rule, currTiling)];
-    let nxt = rule.children[0];
-    let nxtRule = this.rules[nxt];
-    while (this.hasChildren(nxt) && isEquivOp(nxtRule.op)) {
-      rules.push(this.#ruleToJsonable(nxtRule, this.tilings[nxt]));
-      [nxt] = nxtRule.children;
-      nxtRule = this.rules[nxt];
+  #constructJsonObject(rule, currTiling, keyMap) {
+    return {
+      class_module: rule.classModule,
+      rule_class: rule.ruleClass,
+      comb_class: keyMap.get(currTiling.key),
+      children: rule.children.map((c) => keyMap.get(this.tilings[c].key)),
+      strategy: rule.strategy,
+    };
+  }
+
+  /**
+   *
+   * @param {number} idx
+   * @param {number} parentId
+   * @returns {boolean} true if parent found
+   */
+  #parentBelowInSingleChildPath(idx, parentId) {
+    let rule = this.getRuleByLHS(idx);
+    while (rule !== null && rule.children.length === 1) {
+      if (rule.children[0] === parentId) return true;
+      rule = this.getRuleByLHS(rule.children[0]);
     }
-    visited.add(nxt);
-    stack.push(nxt);
-    return rules;
+    return false;
   }
 }
 

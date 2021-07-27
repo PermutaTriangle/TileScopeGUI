@@ -4,24 +4,13 @@ from .constants import Constant
 
 
 class Arguments:
+    # pylint: disable=too-few-public-methods
     """Command line argument handler."""
 
     def __init__(self, url: str, debug: bool, browser: bool) -> None:
         self.url: str = url
         self.debug: bool = debug
         self.browser: bool = browser
-
-    def set_url(self, url: str) -> None:
-        """Setter for url."""
-        self.url = url
-
-    def set_debug(self, debug: bool) -> None:
-        """Setter for debug."""
-        self.debug = debug
-
-    def set_browser(self, browser: bool) -> None:
-        """Setter for browser."""
-        self.browser = browser
 
     @classmethod
     def parse(cls) -> "Arguments":

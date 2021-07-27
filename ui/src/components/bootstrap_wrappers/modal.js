@@ -15,6 +15,16 @@ class Modal {
   // #region Static functions
 
   /**
+   * Title for header.
+   *
+   * @param {string} title
+   * @returns {string} raw HTML string
+   */
+  static headerTitle(title) {
+    return `<h5 class="modal-title">${title}</h5>`;
+  }
+
+  /**
    * Close button for header.
    *
    * @returns {string} raw HTML string

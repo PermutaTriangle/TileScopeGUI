@@ -14,6 +14,18 @@ class AppState {
     this.reqPlace = { dir: 'n', idx: 0 };
     /** @type {{row: boolean }} */
     this.fusion = { row: true };
+    /** @type {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean, root: string[]}} */
+    this.verificationStrategies = {
+      atom: true,
+      locallyFactorable: true,
+      insertionEncodable: true,
+      oneByOne: false,
+      subclass: false,
+      shortObstruction: false,
+      root: [],
+    };
+    /** @type {{json: boolean}} */
+    this.clipboard = { json: true };
   }
 
   /**
@@ -122,6 +134,151 @@ class AppState {
    */
   getFusionRow() {
     return this.fusion.row;
+  }
+
+  /**
+   * Set atom verification.
+   *
+   * @param {boolean} on
+   */
+  setAtomVerification(on) {
+    this.verificationStrategies.atom = on;
+  }
+
+  /**
+   * Get atom verification.
+   *
+   * @returns {boolean} on
+   */
+  getAtomVerification() {
+    return this.verificationStrategies.atom;
+  }
+
+  /**
+   * Set locally factorable verification.
+   *
+   * @param {boolean} on
+   */
+  setLocallyFactorableVerification(on) {
+    this.verificationStrategies.locallyFactorable = on;
+  }
+
+  /**
+   * Get locally factorable verification.
+   *
+   * @returns {boolean} on
+   */
+  getLocallyFactorableVerification() {
+    return this.verificationStrategies.locallyFactorable;
+  }
+
+  /**
+   * Set insertion encodable verification.
+   *
+   * @param {boolean} on
+   */
+  setInsertionEncodableVerification(on) {
+    this.verificationStrategies.insertionEncodable = on;
+  }
+
+  /**
+   * Get insertion encodable verification.
+   *
+   * @returns {boolean} on
+   */
+  getInsertionEncodableVerification() {
+    return this.verificationStrategies.insertionEncodable;
+  }
+
+  /**
+   * Set one by one verification.
+   *
+   * @param {boolean} on
+   */
+  setOneByOneVerifciation(on) {
+    this.verificationStrategies.oneByOne = on;
+  }
+
+  /**
+   * Get one by one verification.
+   *
+   * @returns {boolean} on
+   */
+  getOneByOneVerifciation() {
+    return this.verificationStrategies.oneByOne;
+  }
+
+  /**
+   * Set subclass verification.
+   *
+   * @param {boolean} on
+   */
+  setSubclassVerification(on) {
+    this.verificationStrategies.subclass = on;
+  }
+
+  /**
+   * Get subclass verification.
+   *
+   * @returns {boolean} on
+   */
+  getSubclassVerification() {
+    return this.verificationStrategies.subclass;
+  }
+
+  /**
+   * Set short obstruction verification.
+   *
+   * @param {boolean} on
+   */
+  setShortObstructionVerification(on) {
+    this.verificationStrategies.shortObstruction = on;
+  }
+
+  /**
+   * Get short obstruction verification.
+   *
+   * @returns {boolean} on
+   */
+  getShortObstructionVerification() {
+    return this.verificationStrategies.shortObstruction;
+  }
+
+  /**
+   * Set root basis.
+   *
+   * @param {string[]} basis
+   */
+  setRootBasis(basis) {
+    this.verificationStrategies.root = basis;
+  }
+
+  /**
+   * Get root basis.
+   *
+   * @returns {string[]} basis
+   */
+  getRootBasis() {
+    return this.verificationStrategies.root;
+  }
+
+  /**
+   * Set the clipboard copy output. True is json,
+   * false is repl.
+   *
+   * @param {boolean} json
+   */
+  setClipboardCopy(json) {
+    this.clipboard.json = json;
+  }
+
+  /**
+   * Is the clipboard copy set to json (if not, it is set to repl).
+   *
+   * @returns {boolean} is json
+   */
+  getClipboardCopy() {
+    return this.clipboard.json;
   }
 }
 
