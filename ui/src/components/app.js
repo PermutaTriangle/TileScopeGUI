@@ -5,16 +5,17 @@ import TextInput from './text_input';
 import SpecTree from './spec_tree';
 import ErrorDisplay from './error_display';
 import statusCode from '../consumers/status_codes';
-import { getTiling } from '../consumers/service';
+import { decodeTilings, getTiling } from '../consumers/service';
 import { downloadJson } from '../utils/dom_utils';
 import AppState from '../utils/app_state';
 import displaySettings from './settings';
 import displayHelp from './help';
+import { isStr } from '../utils/utils';
+import dictionary from '../containers/dictionary';
 
 import '../utils/typedefs';
 
 import './styles/app.scss';
-import { isStr } from '../utils/utils';
 
 /**
  * The main component. It keeps track of states.
@@ -102,8 +103,8 @@ class App {
       () => {
         this.#reset();
       },
-      () => {
-        this.#export();
+      async () => {
+        await this.#export();
       },
       () => {
         this.#import();
@@ -214,14 +215,42 @@ class App {
   }
 
   /**
+   * Get a dictionary that maps tiling keys to tiling jsons.
+   *
+   * @asnyc
+   * @returns {Promise.<Dictionary>} key map
+   */
+  async #getKeyMap() {
+    const spec = this.#specTree.getSpecification();
+    const allKeys = spec.allTilingKeys();
+    const resp = await decodeTilings(allKeys);
+    if (resp.status !== statusCode.OK) return null;
+    const allValues = resp.data;
+    const keyMap = {};
+    allKeys.forEach((key, i) => {
+      keyMap[key] = allValues[i];
+    });
+    return dictionary(keyMap);
+  }
+
+  /**
    * Export the current tree, either as a session or as a specification json.
    * The latter will only be possible if its complete.
+   * @async
    */
-  #export() {
+  async #export() {
     if (!this.#specTree) {
       this.#errorDisplay.alert('Nothing to export');
     } else if (this.#specTree.hasSpecification()) {
-      downloadJson(this.#specTree.getSpecification().toSpecificationJson(), 'specification');
+      const keyMap = await this.#getKeyMap();
+      if (keyMap === null) {
+        this.#errorDisplay('Failed to fetch tilings from server');
+      } else {
+        downloadJson(
+          this.#specTree.getSpecification().toSpecificationJson(keyMap),
+          'specification',
+        );
+      }
     } else {
       this.#errorDisplay.alert('Currently only implemented for complete specs');
     }

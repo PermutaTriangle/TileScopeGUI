@@ -18,7 +18,7 @@ const getTiling = async (basisOrJson, state) =>
  *
  * @async
  * @param {string[]} tilingKeys
- * @returns {Promise.<{status: number, data: TilingJson|null}>}
+ * @returns {Promise.<{status: number, data: TilingJson[]|null}>}
  */
 const decodeTilings = async (tilingKeys) => apiPost('/tiling/decode', tilingKeys);
 

@@ -167,3 +167,17 @@
  * @property {number[]} strats
  * @property {string[]} basis
  */
+
+/**
+ * @typedef Dictionary
+ * @property {(key: any, value: any) => void} set
+ * @property {(key: any) => any } get
+ * @property {(key: any) => boolean} contains
+ */
+
+/**
+ * @typedef Queue
+ * @property {(item: any) => void} enqueue
+ * @property {() => any} dequeue
+ * @property {() => boolean} isEmpty
+ */

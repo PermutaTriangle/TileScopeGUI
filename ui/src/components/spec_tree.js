@@ -537,6 +537,17 @@ class SpecTree {
   }
 
   /**
+   * Set click event for a new tiling node.
+   *
+   * @param {number} nodeId
+   */
+  #setClickEventForNode(nodeId) {
+    $(`#spec-node-${nodeId}`).on('click', () => {
+      this.#viewNodeEventHandler(nodeId);
+    });
+  }
+
+  /**
    * Called on click for class nodes.
    *
    * @param {number} nodeId
@@ -545,17 +556,6 @@ class SpecTree {
     const { html, tiling, rule } = this.#getNodeMeta(nodeId);
     viewClassNode(tiling, this.#appState, html, rule, this.#errorDisplay, (newRule) => {
       this.#extendNode(nodeId, newRule);
-    });
-  }
-
-  /**
-   * Set click event for a new tiling node.
-   *
-   * @param {number} nodeId
-   */
-  #setClickEventForNode(nodeId) {
-    $(`#spec-node-${nodeId}`).on('click', () => {
-      this.#viewNodeEventHandler(nodeId);
     });
   }
 
