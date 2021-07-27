@@ -32,37 +32,35 @@
  */
 
 /**
- * @typedef VerificationStrategy
- * @property {'tilings.strategies.verification'} class_module
+ * @typedef VerificationRule
+ * @property {string} class_module
  * @property {string} strategy_class
- */
-
-/**
- * @typedef VerificationRuleResponse
- * @property {'comb_spec_searcher.strategies.rule'} class_module
- * @property {TilingJson} comb_class
+ * @property {object} strategy
  * @property {string} formal_step
- * @property {'VerificationRule'} rule_class
- * @property {} strategy
  */
 
 /**
  * @typedef TilingResponse
  * @property {string} key
  * @property {TilingPlot} plot
- * @property {TilingJson} tiling
- * @property {null|VerificationStrategy} verified
+ * @property {null|VerificationRule} verified
  */
 
 /**
  * @typedef TilingInterface
  * @property {string} key
  * @property {TilingPlot} plot
- * @property {TilingJson} tilingJson
- * @property {null|VerificationStrategy} verified
+ * @property {null|VerificationRule} verified
  * @property {() => boolean} isVerified
  * @property {() => string} asciiHTML
- * @property {() => TilingJson} getTilingObject
+ */
+
+/**
+ * @typedef OriginalRule
+ * @property {string} class_module
+ * @property {string} rule_class
+ * @property {object} strategy
+ * @property {string[]} children
  */
 
 /**
@@ -73,7 +71,7 @@
  * @property {string} op
  * @property {string} rule_class
  * @property {object} strategy
- * @property {object|undefined} original_rule
+ * @property {undefined|OriginalRule} original_rule
  */
 
 /**
@@ -88,7 +86,7 @@
  * @property {string} classModule
  * @property {object} strategy
  * @property {number[]} children
- * @property {object|undefined} originalRule
+ * @property {undefined|OriginalRule} originalRule
  */
 
 /**
@@ -99,7 +97,7 @@
  * @property {string} classModule
  * @property {object} strategy
  * @property {string} op
- * @property {object|undefined} originalRule
+ * @property {object|OriginalRule} originalRule
  * @property {(childrenIds: number[]) => RuleWithoutTilings} withoutTilings
  */
 
@@ -109,7 +107,7 @@
  * @property {{patt: string}} cellInsert
  * @property {{dir: 'n'|'w'|'s'|'e', idx: number}} reqPlace
  * @property {{row: boolean}} fusion
- * @property {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean}} verificationStrategies
+ * @property {{atom: boolean, locallyFactorable: boolean, insertionEncodable: boolean, oneByOne: boolean, subclass: boolean, shortObstruction: boolean, root: string[]}} verificationStrategies
  * @property {{json: boolean}} clipboard
  * @property {(patt: string) => void} setCellInsertPatt
  * @property {() => string} getCellInsertPatt
@@ -135,6 +133,8 @@
  * @property {() => boolean} getSubclassVerification
  * @property {(on: boolean) => void} setShortObstructionVerification
  * @property {() => boolean} getShortObstructionVerification
+ * @property {(basis: string[]) => void} setRootBasis
+ * @property {() => string[]} getRootBasis
  * @property {(json: boolean) => void} setClipboardCopy
  * @property {() => boolean} getClipboardCopy
  */
@@ -160,4 +160,24 @@
  * @property {(id: number, value: number) => void} set
  * @property {(id: number) => boolean} contains
  * @property {Object.<number,number>} data
+ */
+
+/**
+ * @typedef VerifyTactics
+ * @property {number[]} strats
+ * @property {string[]} basis
+ */
+
+/**
+ * @typedef Dictionary
+ * @property {(key: any, value: any) => void} set
+ * @property {(key: any) => any } get
+ * @property {(key: any) => boolean} contains
+ */
+
+/**
+ * @typedef Queue
+ * @property {(item: any) => void} enqueue
+ * @property {() => any} dequeue
+ * @property {() => boolean} isEmpty
  */

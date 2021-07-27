@@ -7,6 +7,8 @@ import displayTiling from './tiling_display';
 import '../utils/typedefs';
 
 import './styles/node_viewer.scss';
+import { decodeTilings, replOfTiling } from '../consumers/service';
+import statusCode from '../consumers/status_codes';
 
 /**
  * A modal component that takes over display.
@@ -15,15 +17,29 @@ class NodeViewer {
   // #region Static functions
 
   /**
-   * Set click event on clipboard icon to store tiling as json
-   * in user's clipboard.
+   * Get tilling json.
    *
-   * @param {TilingJson} tilingJson
+   * @async
+   * @param {string} tilingKey
+   * @returns {Promise.<Array.<boolean|string>>} error and data tuple
    */
-  static #setClipboardEvent(tilingJson) {
-    $('#clipboardcopy').on('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(tilingJson));
-    });
+  static async #getTilingJson(tilingKey) {
+    const response = await decodeTilings([tilingKey]);
+    if (response.status !== statusCode.OK) return [false, null];
+    return [true, JSON.stringify(response.data[0])];
+  }
+
+  /**
+   * Get tiling repl.
+   *
+   * @async
+   * @param {string} tilingKey
+   * @returns {Promise.<Array.<boolean|string>>} error and data tuple
+   */
+  static async #getTilingRepl(tilingKey) {
+    const response = await replOfTiling(tilingKey);
+    if (response.status !== statusCode.OK) return [false, null];
+    return [true, response.data];
   }
 
   /**
@@ -91,6 +107,9 @@ class NodeViewer {
   /** @type {ErrorDisplayInterface} */
   #errorDisplay;
 
+  /** @type {AppStateInterface} */
+  #appState;
+
   // #endregion
 
   // #region public methods
@@ -107,18 +126,50 @@ class NodeViewer {
    * @param {(newRule: RuleResponse) => void} callback
    */
   constructor(tiling, appState, nodeHTML, rule, errorDisplay, callback) {
+    this.#appState = appState;
     this.#modal = NodeViewer.#constructModal(() => {
       this.#remove();
     });
     this.#errorDisplay = errorDisplay;
     this.#errorDisplay.moveToParent($('#nodeview'));
-    NodeViewer.#setClipboardEvent(tiling.tilingJson);
+    this.#setClipboardEvent(tiling.key);
     this.#renderTiling(tiling, appState, nodeHTML, rule, callback);
   }
 
   // #endregion
 
   // #region Private functions
+
+  /**
+   * Get preferred copy data.
+   *
+   * @async
+   * @param {string} tilingKey
+   * @returns {Promise.<Array.<boolean|string>>}
+   */
+  async #getCopyData(tilingKey) {
+    if (this.#appState.getClipboardCopy()) {
+      return NodeViewer.#getTilingJson(tilingKey);
+    }
+    return NodeViewer.#getTilingRepl(tilingKey);
+  }
+
+  /**
+   * Set click event on clipboard icon to store tiling as json
+   * in user's clipboard.
+   *
+   * @param {string} tilingKey
+   */
+  #setClipboardEvent(tilingKey) {
+    $('#clipboardcopy').on('click', async () => {
+      const [valid, copyStr] = await this.#getCopyData(tilingKey);
+      if (valid) {
+        navigator.clipboard.writeText(copyStr);
+      } else {
+        this.#errorDisplay.alert('Failed to copy');
+      }
+    });
+  }
 
   #renderTiling(tiling, appState, nodeHTML, rule, callback) {
     const tilingDisplayDiv = NodeViewer.#transformFigure(nodeHTML);

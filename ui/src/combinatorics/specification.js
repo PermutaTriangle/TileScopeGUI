@@ -1,13 +1,52 @@
 import { isEquivOp } from '../utils/permuta_utils';
+
 import '../utils/typedefs';
 
 /**
  * A JS representation of a partial specification.
  */
 class Specification {
-  static #verificationRule(currTiling) {
+  /**
+   *
+   * @param {TilingInterface} currTiling
+   * @param {OriginalRule} originalRule
+   * @param {Dictionary} keyMap
+   */
+  static #originalRuleToJsonable(currTiling, originalRule, keyMap) {
+    const ruleJson = { ...originalRule };
+    delete ruleJson.children;
+    ruleJson.children = originalRule.children.map((cKey) => keyMap.get(cKey));
+    ruleJson.comb_class = keyMap.get(currTiling.key);
+    return ruleJson;
+  }
+
+  /**
+   * @param {Dictionary} dict
+   */
+  static #addEmpty(dict) {
+    const emptyKey = 'AQABAAAAAAA=';
+    if (!dict.contains(emptyKey)) {
+      const emptyTilingJson = {
+        class_module: 'tilings.tiling',
+        comb_class: 'Tiling',
+        obstructions: [{ patt: [0], pos: [[0, 0]] }],
+        requirements: [],
+        assumptions: [],
+      };
+      dict.set(emptyKey, emptyTilingJson);
+    }
+  }
+
+  /**
+   *
+   * @param {TilingInterface} currTiling
+   * @param {Dictionary} keyMap
+   * @returns
+   */
+  static #verificationRule(currTiling, keyMap) {
     const rule = { ...currTiling.verified };
     delete rule.formal_step;
+    rule.comb_class = keyMap.get(currTiling.key);
     return rule;
   }
 
@@ -198,10 +237,92 @@ class Specification {
     return newClasses;
   }
 
-  toSpecificationJson() {
+  /**
+   *
+   * @param {Dictionary} keyMap
+   * @returns {{root: TilingJson, rules: object[]}}
+   */
+  toSpecificationJson(keyMap) {
+    Specification.#addEmpty(keyMap);
     return {
-      root: this.tilings[0].tilingJson,
-      rules: this.#getJsonableRules(),
+      root: keyMap.get(this.tilings[0].key),
+      rules: this.#getJsonableRules(keyMap),
+    };
+  }
+
+  #getJsonableRules(keyMap) {
+    const { rules, visited, stack } = Specification.#getJsonableRulesInit();
+    while (stack.length > 0) {
+      const curr = stack.pop();
+      const currTiling = this.tilings[curr];
+      if (this.hasChildren(curr)) {
+        this.#jsonExpand(curr, currTiling, visited, stack, rules, keyMap);
+      } else if (currTiling.isVerified()) {
+        rules.push(Specification.#verificationRule(currTiling, keyMap));
+      }
+    }
+    return rules;
+  }
+
+  #jsonExpand(curr, currTiling, visited, stack, rules, keyMap) {
+    const rule = this.rules[curr];
+    if (isEquivOp(rule.op)) {
+      rules.push(this.#constructEquivalencePath(currTiling, rule, visited, stack, keyMap));
+    } else {
+      rule.children.forEach((c) => {
+        if (!visited.has(c)) {
+          visited.add(c);
+          stack.push(c);
+        }
+      });
+      rules.push(this.#ruleToJsonable(rule, currTiling, keyMap));
+    }
+  }
+
+  #constructEquivalencePath(currTiling, rule, visited, stack, keyMap) {
+    return {
+      class_module: 'comb_spec_searcher.strategies.rule',
+      rule_class: 'EquivalencePathRule',
+      rules: this.#gatherEquivRules(currTiling, rule, visited, stack, keyMap),
+    };
+  }
+
+  #gatherEquivRules(currTiling, rule, visited, stack, keyMap) {
+    const rules = [this.#ruleToJsonable(rule, currTiling, keyMap)];
+    let nxt = rule.children[0];
+    let nxtRule = this.rules[nxt];
+    while (this.hasChildren(nxt) && isEquivOp(nxtRule.op)) {
+      rules.push(this.#ruleToJsonable(nxtRule, this.tilings[nxt], keyMap));
+      [nxt] = nxtRule.children;
+      nxtRule = this.rules[nxt];
+    }
+    visited.add(nxt);
+    stack.push(nxt);
+    return rules;
+  }
+
+  #ruleToJsonable(rule, currTiling, keyMap) {
+    const ruleObj = this.#constructJsonObject(rule, currTiling, keyMap);
+    if (rule.originalRule !== undefined) {
+      ruleObj.original_rule = Specification.#originalRuleToJsonable(
+        currTiling,
+        rule.originalRule,
+        keyMap,
+      );
+      delete ruleObj.comb_class;
+      delete ruleObj.children;
+      delete ruleObj.strategy;
+    }
+    return ruleObj;
+  }
+
+  #constructJsonObject(rule, currTiling, keyMap) {
+    return {
+      class_module: rule.classModule,
+      rule_class: rule.ruleClass,
+      comb_class: keyMap.get(currTiling.key),
+      children: rule.children.map((c) => keyMap.get(this.tilings[c].key)),
+      strategy: rule.strategy,
     };
   }
 
@@ -218,78 +339,6 @@ class Specification {
       rule = this.getRuleByLHS(rule.children[0]);
     }
     return false;
-  }
-
-  #getJsonableRules() {
-    const { rules, visited, stack } = Specification.#getJsonableRulesInit();
-    while (stack.length > 0) {
-      const curr = stack.pop();
-      const currTiling = this.tilings[curr];
-      if (this.hasChildren(curr)) {
-        this.#jsonExpand(curr, currTiling, visited, stack, rules);
-      } else if (currTiling.isVerified()) {
-        rules.push(Specification.#verificationRule(currTiling));
-      }
-    }
-    return rules;
-  }
-
-  #constructEquivalencePath(currTiling, rule, visited, stack) {
-    return {
-      class_module: 'comb_spec_searcher.strategies.rule',
-      rule_class: 'EquivalencePathRule',
-      rules: this.#gatherEquivRules(currTiling, rule, visited, stack),
-    };
-  }
-
-  #jsonExpand(curr, currTiling, visited, stack, rules) {
-    const rule = this.rules[curr];
-    if (isEquivOp(rule.op)) {
-      rules.push(this.#constructEquivalencePath(currTiling, rule, visited, stack));
-    } else {
-      rule.children.forEach((c) => {
-        if (!visited.has(c)) {
-          visited.add(c);
-          stack.push(c);
-        }
-      });
-      rules.push(this.#ruleToJsonable(rule, currTiling));
-    }
-  }
-
-  #constructJsonObject(rule, currTiling) {
-    return {
-      class_module: rule.classModule,
-      rule_class: rule.ruleClass,
-      comb_class: currTiling.tilingJson,
-      children: rule.children.map((c) => this.tilings[c].tilingJson),
-      strategy: rule.strategy,
-    };
-  }
-
-  #ruleToJsonable(rule, currTiling) {
-    const ruleObj = this.#constructJsonObject(rule, currTiling);
-    if (rule.originalRule !== undefined) {
-      ruleObj.original_rule = rule.originalRule;
-      delete ruleObj.comb_class;
-      delete ruleObj.children;
-      delete ruleObj.strategy;
-    }
-    return ruleObj;
-  }
-
-  #gatherEquivRules(currTiling, rule, visited, stack) {
-    const rules = [this.#ruleToJsonable(rule, currTiling)];
-    let nxt = rule.children[0];
-    let nxtRule = this.rules[nxt];
-    while (this.hasChildren(nxt) && isEquivOp(nxtRule.op)) {
-      rules.push(this.#ruleToJsonable(nxtRule, this.tilings[nxt]));
-      [nxt] = nxtRule.children;
-      nxtRule = this.rules[nxt];
-    }
-    visited.add(nxt);
-    stack.push(nxt);
-    return rules;
   }
 }
 

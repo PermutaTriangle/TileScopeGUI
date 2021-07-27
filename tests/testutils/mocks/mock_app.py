@@ -1,4 +1,4 @@
-from tests.utils.mocks.mock_paths import MockPaths
+from tests.testutils.mocks.mock_paths import MockPaths
 
 
 def test_app():

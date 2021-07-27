@@ -39,8 +39,6 @@ class Tiling {
    * @param {TilingResponse} tilingResponse
    */
   constructor(tilingResponse) {
-    /** @type {TilingJson} */
-    this.tilingJson = tilingResponse.tiling;
     /** @type {TilingPlot} */
     this.plot = tilingResponse.plot;
     /** @type {string} */
@@ -65,15 +63,6 @@ class Tiling {
    */
   asciiHTML() {
     return `<table>${this.#gatherTableRows()}</table>`;
-  }
-
-  /**
-   * Get tiling json.
-   *
-   * @returns {TilingJson} The tiling in json format.
-   */
-  getTilingObject() {
-    return this.tilingJson;
   }
 
   // #endregion

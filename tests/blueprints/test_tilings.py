@@ -1,14 +1,19 @@
+import base64
 import json
 from base64 import b64decode
 
 import pytest
 from tilings import GriddedPerm, Tiling, TrackingAssumption
 
-from tests.utils.mocks.mock_client import client_generator
+from tests.testutils.mocks.mock_client import client_generator
 
 _HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
 
 _INIT_PATH = "/api/tiling/init"
+_DECODE_PATH = "/api/tiling/decode"
+_REPR_PATH = "/api/tiling/repl"
+
+_EMPTY_VERIFY: dict = {"strats": [], "basis": []}
 
 
 @pytest.fixture
@@ -25,6 +30,13 @@ def assert_code_and_mimetype(res, mimetype="application/json", code=200):
     assert res.mimetype == mimetype
 
 
+def verify_wrap(tiling, strats=None, basis=None):
+    if strats is None:
+        return {"tiling": tiling, "verify": _EMPTY_VERIFY}
+    _b = [] if basis is None else basis
+    return {"tiling": tiling, "verify": {"strats": strats, "basis": _b}}
+
+
 def assert_tiling(
     data,
     expected,
@@ -35,8 +47,6 @@ def assert_tiling(
     matrix=[],
     verified=None,
 ):
-    tiling = Tiling.from_dict(data["tiling"])
-    assert expected == tiling
     assert Tiling.from_bytes(b64decode(data["key"])) == expected
     if verified is None:
         assert data["verified"] is None
@@ -44,7 +54,6 @@ def assert_tiling(
         verification_rule = data["verified"]
         assert verification_rule["class_module"] == "comb_spec_searcher.strategies.rule"
         assert verification_rule["rule_class"] == "VerificationRule"
-        assert Tiling.from_dict(verification_rule["comb_class"]) == expected
         assert verification_rule["formal_step"] == verified
     plot = data["plot"]
     assert plot["assumptions"] == assumptions
@@ -55,7 +64,7 @@ def assert_tiling(
 
 
 def test_tiling_from_string(client):
-    res = post(client, _INIT_PATH, "123")
+    res = post(client, _INIT_PATH, verify_wrap("123"))
     assert_code_and_mimetype(res)
     assert_tiling(
         res.json, Tiling.from_string("123"), label_map={"1": "Av(123)"}, matrix=[["1"]]
@@ -63,7 +72,7 @@ def test_tiling_from_string(client):
 
 
 def test_tiling_from_string_ie_verified(client):
-    res = post(client, _INIT_PATH, "123_321")
+    res = post(client, _INIT_PATH, verify_wrap("123_321", strats=[0]))
     assert_code_and_mimetype(res)
     assert_tiling(
         res.json,
@@ -75,7 +84,7 @@ def test_tiling_from_string_ie_verified(client):
 
 
 def test_tiling_from_string_atom_verified(client):
-    res = post(client, _INIT_PATH, "1")
+    res = post(client, _INIT_PATH, verify_wrap("1"))
     assert_code_and_mimetype(res)
     assert_tiling(
         res.json,
@@ -85,8 +94,13 @@ def test_tiling_from_string_atom_verified(client):
     )
 
 
+def test_tiling_from_string_invalid_verify(client):
+    res = post(client, _INIT_PATH, {"tiling": "123", "verify": {}})
+    assert_code_and_mimetype(res, code=400)
+
+
 def test_tiling_from_string_empty(client):
-    res = post(client, _INIT_PATH, "")
+    res = post(client, _INIT_PATH, verify_wrap(""))
     assert_code_and_mimetype(res)
 
 
@@ -111,7 +125,7 @@ def test_tiling_from_dict(client):
             TrackingAssumption([GriddedPerm.single_cell((0,), (1, 1))]),
         ),
     )
-    res = post(client, _INIT_PATH, tiling.to_jsonable())
+    res = post(client, _INIT_PATH, verify_wrap(tiling.to_jsonable()))
     assert_code_and_mimetype(res)
     assert_tiling(
         res.json,
@@ -137,7 +151,7 @@ def test_tiling_from_dict_atom_verified(client):
         requirements=((GriddedPerm((0,), ((0, 0),)),),),
         assumptions=(),
     )
-    res = post(client, _INIT_PATH, tiling.to_jsonable())
+    res = post(client, _INIT_PATH, verify_wrap(tiling.to_jsonable()))
     assert_code_and_mimetype(res)
     assert_tiling(
         res.json,
@@ -160,7 +174,7 @@ def test_tiling_from_dict_locally_factorable_verified(client):
         requirements=((GriddedPerm((0,), ((0, 2),)),), (GriddedPerm((0,), ((1, 1),)),)),
         assumptions=(),
     )
-    res = post(client, _INIT_PATH, tiling.to_jsonable())
+    res = post(client, _INIT_PATH, verify_wrap(tiling.to_jsonable(), strats=[1]))
     assert_code_and_mimetype(res)
     assert_tiling(
         res.json,
@@ -172,15 +186,50 @@ def test_tiling_from_dict_locally_factorable_verified(client):
 
 
 def test_tiling_from_invalid(client):
-    res = post(client, _INIT_PATH, 5)
+    invalids = [5, False, [], None, 3.7, {"not_a_tiling_dict": True}]
+    for inv in invalids:
+        res = post(client, _INIT_PATH, inv)
+        assert_code_and_mimetype(res, code=400)
+        res = post(client, _INIT_PATH, verify_wrap(inv))
+        assert_code_and_mimetype(res, code=400)
+
+
+def test_decode_tiling(client):
+    tilings = [Tiling.from_string("123_4132"), Tiling.from_string("15243")]
+    data = list(map(lambda t: base64.b64encode(t.to_bytes()).decode("utf-8"), tilings))
+    res = post(client, _DECODE_PATH, data)
+    assert_code_and_mimetype(res)
+    assert isinstance(res.json, list)
+    assert len(res.json) == 2
+    for i, tiling in enumerate(tilings):
+        assert Tiling.from_dict(res.json[i]) == tiling
+
+
+def test_decode_tiling_invalid_type(client):
+    for inv in [False, 0, 3.14, {}, "x", None]:
+        res = post(client, _DECODE_PATH, inv)
+        assert_code_and_mimetype(res, code=400)
+
+
+def test_decode_tiling_invalid_encoding(client):
+    res = post(client, _DECODE_PATH, ["5e-d|c<b>a" * 10])
     assert_code_and_mimetype(res, code=400)
-    res = post(client, _INIT_PATH, False)
-    assert_code_and_mimetype(res, code=400)
-    res = post(client, _INIT_PATH, [])
-    assert_code_and_mimetype(res, code=400)
-    res = post(client, _INIT_PATH, None)
-    assert_code_and_mimetype(res, code=400)
-    res = post(client, _INIT_PATH, 3.7)
-    assert_code_and_mimetype(res, code=400)
-    res = post(client, _INIT_PATH, {"not_a_tiling_dict": True})
+
+
+def test_repr_tiling(client):
+    tiling = Tiling.from_string("123_4132")
+    key = base64.b64encode(tiling.to_bytes()).decode("utf-8")
+    res = post(client, _REPR_PATH, key)
+    assert_code_and_mimetype(res)
+    assert repr(tiling) == res.json
+
+
+def test_repr_tiling_invalid_type(client):
+    for inv in [False, 0, [], {}, None, 2.3]:
+        res = post(client, _REPR_PATH, inv)
+        assert_code_and_mimetype(res, code=400)
+
+
+def test_repr_tiling_invalid_encoding(client):
+    res = post(client, _REPR_PATH, "5e-d|c<b>a" * 10)
     assert_code_and_mimetype(res, code=400)

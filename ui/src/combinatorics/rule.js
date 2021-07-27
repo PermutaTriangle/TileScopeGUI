@@ -58,7 +58,7 @@ class Rule {
     this.strategy = jsonObject.strategy;
     /** @type {string} */
     this.op = Rule.#getOp(jsonObject);
-    /** @type {undefined|object} */
+    /** @type {undefined|OriginalRule} */
     this.originalRule = Rule.#getOriginalRule(jsonObject);
   }
 

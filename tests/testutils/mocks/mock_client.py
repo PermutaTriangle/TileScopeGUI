@@ -1,4 +1,4 @@
-from tests.utils.mocks.mock_app import test_app
+from tests.testutils.mocks.mock_app import test_app
 
 
 def client_generator():
