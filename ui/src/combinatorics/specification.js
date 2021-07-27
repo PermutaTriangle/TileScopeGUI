@@ -7,6 +7,20 @@ import '../utils/typedefs';
  */
 class Specification {
   /**
+   *
+   * @param {TilingInterface} currTiling
+   * @param {OriginalRule} originalRule
+   * @param {Dictionary} keyMap
+   */
+  static #originalRuleToJsonable(currTiling, originalRule, keyMap) {
+    const ruleJson = { ...originalRule };
+    delete ruleJson.children;
+    ruleJson.children = originalRule.children.map((cKey) => keyMap.get(cKey));
+    ruleJson.comb_class = keyMap.get(currTiling.key);
+    return ruleJson;
+  }
+
+  /**
    * @param {Dictionary} dict
    */
   static #addEmpty(dict) {
@@ -311,34 +325,6 @@ class Specification {
       strategy: rule.strategy,
     };
   }
-
-  /**
-   *
-   * @param {TilingInterface} currTiling
-   * @param {OriginalRule} originalRule
-   * @param {Dictionary} keyMap
-   */
-  static #originalRuleToJsonable(currTiling, originalRule, keyMap) {
-    const ruleJson = { ...originalRule };
-    delete ruleJson.children;
-    ruleJson.children = originalRule.children.map((cKey) => keyMap.get(cKey));
-    ruleJson.comb_class = keyMap.get(currTiling.key);
-    return ruleJson;
-  }
-
-  /*
-  const children = await Promise.all(
-      originalRule.children.map((childKey) =>
-        Specification.#getOriginalRuleTiling(childKey, keyMap),
-      ),
-    )
-
-  static async #getOriginalRuleTiling(key, keyMap) {
-    if (keyMap.contains(key)) return keyMap.get(key);
-    const resp = await decodeTilings([key]);
-    if (resp.status !== statusCode.OK) throw Error('Failed to export');
-    return resp.data[0];
-  } */
 
   /**
    *

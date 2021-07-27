@@ -1,7 +1,7 @@
 from flask.app import Flask
 
 from .factory import DevConfig, ProdConfig, create_app
-from .utils import Arguments, Constant, open_browser_tab, quiet_mode
+from .utils import Arguments, Constant, open_browser_tab
 
 
 def tilescopegui_app() -> Flask:
@@ -11,7 +11,6 @@ def tilescopegui_app() -> Flask:
         return create_app(DevConfig())
     print("Running server now. Ctrl+C to quit.")
     app = create_app(ProdConfig())
-    quiet_mode()
     if args.browser:
         open_browser_tab(args.url, delay=Constant.BROWSER_OPEN_DELAY)
     return app
