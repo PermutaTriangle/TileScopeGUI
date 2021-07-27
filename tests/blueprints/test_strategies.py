@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from tilings import GriddedPerm, Tiling
 
-from tests.utils.mocks.mock_client import client_generator
+from tests.testutils.mocks.mock_client import client_generator
 from tilescopegui.combinatorics.tilings import encode_tiling
 
 _HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}

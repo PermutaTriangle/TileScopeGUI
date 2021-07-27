@@ -56,14 +56,14 @@ def tilings_from_keys() -> Response:
 
 
 @tiling_blueprint.route("/repl", methods=["POST"])
-def tiling_repl() -> str:
+def tiling_repl() -> Response:
     """Given an encoded key, convert to repl"""
     data: Optional[str] = request.get_json()
     if data is None or not isinstance(data, str):
         raise BadRequest()
     try:
         tiling: Tiling = next(decode_keys([data]))
-        return repr(tiling)
+        return jsonify(repr(tiling))
     except (
         StopIteration,
         TilingDecodeException,

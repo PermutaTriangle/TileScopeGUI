@@ -1,16 +1,19 @@
+import base64
 import json
 from base64 import b64decode
 
 import pytest
 from tilings import GriddedPerm, Tiling, TrackingAssumption
 
-from tests.utils.mocks.mock_client import client_generator
+from tests.testutils.mocks.mock_client import client_generator
 
 _HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
 
 _INIT_PATH = "/api/tiling/init"
+_DECODE_PATH = "/api/tiling/decode"
+_REPR_PATH = "/api/tiling/repl"
 
-_EMPTY_VERIFY = {"strats": [], "basis": []}
+_EMPTY_VERIFY: dict = {"strats": [], "basis": []}
 
 
 @pytest.fixture
@@ -89,6 +92,11 @@ def test_tiling_from_string_atom_verified(client):
         matrix=[["ε"]],
         verified="is atom",
     )
+
+
+def test_tiling_from_string_invalid_verify(client):
+    res = post(client, _INIT_PATH, {"tiling": "123", "verify": {}})
+    assert_code_and_mimetype(res, code=400)
 
 
 def test_tiling_from_string_empty(client):
@@ -184,3 +192,44 @@ def test_tiling_from_invalid(client):
         assert_code_and_mimetype(res, code=400)
         res = post(client, _INIT_PATH, verify_wrap(inv))
         assert_code_and_mimetype(res, code=400)
+
+
+def test_decode_tiling(client):
+    tilings = [Tiling.from_string("123_4132"), Tiling.from_string("15243")]
+    data = list(map(lambda t: base64.b64encode(t.to_bytes()).decode("utf-8"), tilings))
+    res = post(client, _DECODE_PATH, data)
+    assert_code_and_mimetype(res)
+    assert isinstance(res.json, list)
+    assert len(res.json) == 2
+    for i, tiling in enumerate(tilings):
+        assert Tiling.from_dict(res.json[i]) == tiling
+
+
+def test_decode_tiling_invalid_type(client):
+    for inv in [False, 0, 3.14, {}, "x", None]:
+        res = post(client, _DECODE_PATH, inv)
+        assert_code_and_mimetype(res, code=400)
+
+
+def test_decode_tiling_invalid_encoding(client):
+    res = post(client, _DECODE_PATH, ["5e-d|c<b>a" * 10])
+    assert_code_and_mimetype(res, code=400)
+
+
+def test_repr_tiling(client):
+    tiling = Tiling.from_string("123_4132")
+    key = base64.b64encode(tiling.to_bytes()).decode("utf-8")
+    res = post(client, _REPR_PATH, key)
+    assert_code_and_mimetype(res)
+    assert repr(tiling) == res.json
+
+
+def test_repr_tiling_invalid_type(client):
+    for inv in [False, 0, [], {}, None, 2.3]:
+        res = post(client, _REPR_PATH, inv)
+        assert_code_and_mimetype(res, code=400)
+
+
+def test_repr_tiling_invalid_encoding(client):
+    res = post(client, _REPR_PATH, "5e-d|c<b>a" * 10)
+    assert_code_and_mimetype(res, code=400)
