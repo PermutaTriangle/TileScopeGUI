@@ -1,6 +1,9 @@
 ************
 TileScopeGui
 ************
+.. image:: https://github.com/PermutaTriangle/TileScopeGUI/workflows/tests/badge.svg
+    :alt: Travis
+    :target: https://github.com/PermutaTriangle/TileScopeGUI
 
 A web based GUI for expanding permutation classes and finding specifications.
 
