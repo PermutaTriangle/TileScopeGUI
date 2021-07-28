@@ -5,7 +5,6 @@ class PathUtil:
     """Helper class for directory paths."""
 
     _TILESCOPEGUI_ROOT = Path(__file__).parent.parent
-    _PROJECT_ROOT = _TILESCOPEGUI_ROOT.parent
     _STATIC_DIR = _TILESCOPEGUI_ROOT.joinpath("static")
     _TEMPLATE_DIR = _TILESCOPEGUI_ROOT.joinpath("static")
 

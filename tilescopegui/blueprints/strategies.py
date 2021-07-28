@@ -1,5 +1,5 @@
 import itertools
-from typing import TYPE_CHECKING, Iterable, List, Tuple, TypeVar
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, TypeVar
 
 from comb_spec_searcher.exception import StrategyDoesNotApply
 from comb_spec_searcher.strategies.rule import Rule
@@ -122,28 +122,46 @@ def _get_row_col_placement_input() -> Tuple[
     return tiling, verification_tactics, direction, row, idx
 
 
+def _convert_to_eq_if_possible(
+    rule: Rule, verification_tactics: VerificationTactics
+) -> dict:
+    if len(rule.non_empty_children()) == 1:
+        rule_json = rule_as_json(rule.to_equivalence_rule(), verification_tactics)
+        rule_json["original_rule"] = original_rule_as_json(rule)
+        return rule_json
+    return rule_as_json(rule, verification_tactics)
+
+
+def _row_placement(
+    rule: Rule, verification_tactics: VerificationTactics, idx: int
+) -> Optional[dict]:
+    assert isinstance(rule.strategy, RequirementPlacementStrategy)
+    if rule.strategy.gps[0].pos[0][1] == idx:
+        return _convert_to_eq_if_possible(rule, verification_tactics)
+    return None
+
+
+def _col_placement(
+    rule: Rule, verification_tactics: VerificationTactics, idx: int
+) -> Optional[dict]:
+    assert isinstance(rule.strategy, RequirementPlacementStrategy)
+    if rule.strategy.gps[0].pos[0][0] == idx:
+        return _convert_to_eq_if_possible(rule, verification_tactics)
+    return None
+
+
 @strategies_blueprint.route("/rowcolplace", methods=["POST"])
 def row_col_placement() -> dict:
     """Apply row column placement strategy to given tiling."""
     tiling, verification_tactics, direction, row, idx = _get_row_col_placement_input()
     for rule in RowAndColumnPlacementFactory(row, not row, dirs=(direction,))(tiling):
-        assert isinstance(rule.strategy, RequirementPlacementStrategy)
-        if row and rule.strategy.gps[0].pos[0][1] == idx:
-            if len(rule.non_empty_children()) == 1:
-                rule_json = rule_as_json(
-                    rule.to_equivalence_rule(), verification_tactics
-                )
-                rule_json["original_rule"] = original_rule_as_json(rule)
-                return rule_json
-            return rule_as_json(rule, verification_tactics)
-        if not row and rule.strategy.gps[0].pos[0][0] == idx:
-            if len(rule.non_empty_children()) == 1:
-                rule_json = rule_as_json(
-                    rule.to_equivalence_rule(), verification_tactics
-                )
-                rule_json["original_rule"] = original_rule_as_json(rule)
-                return rule_json
-            return rule_as_json(rule, verification_tactics)
+        if row:
+            rule_json = _row_placement(rule, verification_tactics, idx)
+        else:
+            rule_json = _col_placement(rule, verification_tactics, idx)
+        if rule_json is not None:
+            return rule_json
+
     raise BadRequest()
 
 

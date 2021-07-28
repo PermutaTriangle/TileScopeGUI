@@ -83,7 +83,10 @@ class Labeller:
         """Find symbols for a tiling."""
         if self.tiling.is_epsilon():
             self.img[0][0] = "ε"
-            return
+        else:
+            self._non_epsilon_symbols()
+
+    def _non_epsilon_symbols(self):
         blacklist = set(Labeller._INIT_CACHE.values())
         for cell, (obstructions, _) in sorted(self.tiling.cell_basis().items()):
             positive = cell in self.tiling.positive_cells
@@ -97,8 +100,7 @@ class Labeller:
                     self.labels_to_basis[label] = f"Av+({bases})"
                 else:
                     self.labels_to_basis[label] = f"Av({bases})"
-        if Labeller._EMPTY_STR in self.labels_to_basis:
-            del self.labels_to_basis[Labeller._EMPTY_STR]
+        assert Labeller._EMPTY_STR not in self.labels_to_basis  # TODO: REMOVE
 
     def find_crossing(self) -> None:
         """Find crossing obstructions for a tiling."""

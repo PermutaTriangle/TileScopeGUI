@@ -2,6 +2,8 @@ import json
 from typing import Any
 
 import pytest
+from permuta.misc import DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST
+from permuta.patterns.perm import Perm
 from tilings import GriddedPerm, Tiling
 
 from tests.testutils.mocks.mock_client import client_generator
@@ -12,6 +14,11 @@ _HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
 _PATH_PREFIX = "/api/strategies"
 
 _EMPTY_VERIFY = {"strats": [], "basis": []}
+_IE_LF_VERIFY = {"strats": [0, 1], "basis": []}
+
+
+def _all_verify(basis):
+    return {"strats": list(range(5)), "basis": basis}
 
 
 def invalid_tilings():
@@ -35,12 +42,12 @@ def client():
     yield from client_generator()
 
 
-def verify_wrap_tiling(tiling: Tiling) -> dict:
-    return {"tiling": encode_tiling(tiling), "verify": _EMPTY_VERIFY}
+def verify_wrap_tiling(tiling: Tiling, verify=_EMPTY_VERIFY) -> dict:
+    return {"tiling": encode_tiling(tiling), "verify": verify}
 
 
-def verify_wrap_invalid(invalid_tiling: Any) -> dict:
-    return {"tiling": invalid_tiling, "verify": _EMPTY_VERIFY}
+def verify_wrap_invalid(invalid_tiling: Any, verify=_EMPTY_VERIFY) -> dict:
+    return {"tiling": invalid_tiling, "verify": verify}
 
 
 def post(cli, path: str, data, headers=_HEADERS):
@@ -52,12 +59,21 @@ def assert_code_and_mimetype(res, mimetype="application/json", code=200):
     assert res.mimetype == mimetype
 
 
+##########
+# Factor #
+##########
+
+
 def test_factor_invalid_type(client):
     for inp in invalid_tilings():
         assert_code_and_mimetype(
             post(client, f"{_PATH_PREFIX}/factor", verify_wrap_invalid(inp)), code=400
         )
         assert_code_and_mimetype(post(client, f"{_PATH_PREFIX}/factor", inp), code=400)
+    assert_code_and_mimetype(
+        post(client, f"{_PATH_PREFIX}/factor", verify_wrap_tiling(Tiling(), None)),
+        code=400,
+    )
 
 
 def test_factor_does_not_apply(client):
@@ -74,7 +90,23 @@ def test_factor_does_not_apply(client):
         post(client, f"{_PATH_PREFIX}/factor", verify_wrap_tiling(t)), code=400
     )
     assert_code_and_mimetype(
-        post(client, f"{_PATH_PREFIX}/factor?interleaving=all", t.to_jsonable()),
+        post(client, f"{_PATH_PREFIX}/factor?interleaving=all", verify_wrap_tiling(t)),
+        code=400,
+    )
+
+
+def test_factor_invalid_operation(client):
+    t = (
+        Tiling.from_string("123")
+        .add_requirement(Perm((0,)), ((0, 0),))
+        .place_point_in_cell((0, 0), 1)
+    )
+    assert_code_and_mimetype(
+        post(
+            client,
+            f"{_PATH_PREFIX}/factor?interleaving=invalid-op",
+            verify_wrap_tiling(t),
+        ),
         code=400,
     )
 
@@ -182,6 +214,11 @@ def test_factor(client):
     )
     _factor_t_helper(client, tiling, False)
     _factor_t_helper(client, tiling, True)
+
+
+####################
+# ColRow placement #
+####################
 
 
 def test_row_col_placement_invalid_type(client):
@@ -302,14 +339,60 @@ def test_row_col_placement_does_not_apply(client):
                 "verify": _EMPTY_VERIFY,
                 "dir": d,
                 "row": r,
-                "idx": 0,
+                "idx": DIR_EAST,
             },
         )
         assert_code_and_mimetype(res, code=400)
 
 
 def test_row_placement(client):
-    pass
+    t = Tiling(
+        obstructions=(
+            GriddedPerm((0, 1), ((0, 1), (1, 1))),
+            GriddedPerm((1, 0), ((2, 2), (2, 2))),
+            GriddedPerm((0, 2, 1), ((0, 1), (0, 1), (0, 1))),
+            GriddedPerm((0, 2, 1), ((1, 1), (1, 1), (1, 1))),
+            GriddedPerm((0, 2, 1), ((2, 0), (2, 0), (2, 0))),
+            GriddedPerm((0, 2, 1), ((2, 0), (2, 2), (2, 0))),
+        ),
+        requirements=(),
+        assumptions=(),
+    )
+    data = {
+        "tiling": encode_tiling(t),
+        "verify": _EMPTY_VERIFY,
+        "row": True,
+        "idx": 1,
+        "dir": DIR_NORTH,
+    }
+    res = post(client, f"{_PATH_PREFIX}/rowcolplace", data)
+    assert_code_and_mimetype(res)
+    assert sorted(map(lambda c: c["key"], res.json["children"])) == sorted(
+        [
+            "AwACAQAAAQABAwACAQAAAAAAAAMAAgEAAAABAAAAAA==",
+            "GQABAAAAAQAAAgEAAAMBAAEAAQABAQEAAQMBAAIAAQACAgEAAgMBAAMAAQADAgEAAwMBAAQBAQAEAgIAAQABAgECAAEAAQMBAgABAQIBAgIAAQIBAwECAQABAgECAgEABAMEAwMAAgEAAQABAAEDAAIBAgECAQIBAwACAQMBAwEDAQMAAgEEAAQABAADAAIBBAAEAwQAAQABAAEAAQI=",
+            "EwABAAAAAQAAAgEAAAMBAAEAAQABAQEAAQMBAAIAAQACAgEAAgMBAAMBAQADAgIAAQABAgECAAEBAgECAgEAAQIBAgIBAAMDAwMDAAIBAAEAAQABAwACAQIBAgECAQMAAgEDAAMAAwADAAIBAwADAwMAAQABAAEAAQI=",
+        ]
+    )
+    assert res.json["formal_step"] == "placing the topmost point in row 1"
+    assert res.json["op"] == "+"
+
+
+def test_row_placement_no_possiblities_for_index(client):
+    t = (
+        Tiling.from_string("132")
+        .add_requirement(Perm((0,)), ((0, 0),))
+        .place_point_in_cell((0, 0), DIR_NORTH)
+    )
+    data = {
+        "tiling": encode_tiling(t),
+        "verify": _EMPTY_VERIFY,
+        "row": True,
+        "idx": 1,
+        "dir": DIR_NORTH,
+    }
+    res = post(client, f"{_PATH_PREFIX}/rowcolplace", data)
+    assert_code_and_mimetype(res, code=400)
 
 
 def test_row_placement_eq_rule(client):
@@ -324,7 +407,7 @@ def test_row_placement_eq_rule(client):
         "verify": _EMPTY_VERIFY,
         "row": True,
         "idx": 0,
-        "dir": 1,
+        "dir": DIR_NORTH,
     }
     res = post(client, f"{_PATH_PREFIX}/rowcolplace", data)
     assert_code_and_mimetype(res)
@@ -350,8 +433,94 @@ def test_row_placement_eq_rule(client):
 
 
 def test_col_placement(client):
-    pass
+    t = Tiling(
+        obstructions=(
+            GriddedPerm((0, 1), ((0, 1), (0, 1))),
+            GriddedPerm((0, 1), ((0, 1), (0, 2))),
+            GriddedPerm((0, 1), ((0, 2), (0, 2))),
+            GriddedPerm((0, 1), ((1, 1), (1, 1))),
+            GriddedPerm((0, 1), ((1, 1), (2, 1))),
+            GriddedPerm((0, 1), ((2, 0), (2, 0))),
+            GriddedPerm((0, 1), ((2, 0), (2, 1))),
+            GriddedPerm((0, 1), ((2, 1), (2, 1))),
+            GriddedPerm((0, 1, 2), ((1, 0), (1, 0), (1, 0))),
+            GriddedPerm((0, 1, 2), ((1, 0), (1, 0), (1, 1))),
+            GriddedPerm((0, 1, 2), ((1, 0), (1, 0), (2, 0))),
+            GriddedPerm((0, 1, 2), ((1, 0), (1, 0), (2, 1))),
+        ),
+        requirements=(),
+        assumptions=(),
+    )
+    data = {
+        "tiling": encode_tiling(t),
+        "verify": _EMPTY_VERIFY,
+        "row": False,
+        "idx": 1,
+        "dir": DIR_WEST,
+    }
+    res = post(client, f"{_PATH_PREFIX}/rowcolplace", data)
+    assert_code_and_mimetype(res)
+    assert sorted(map(lambda c: c["key"], res.json["children"])) == sorted(
+        [
+            "CAABAAAAAQABAgIAAQABAAECAAEAAQACAgABAAIAAgIAAQEAAQACAAEBAAEBAgABAQEBAQAA",
+            "IgABAAAAAQAAAQEAAAIBAAEAAQABAgEAAQMBAAEEAQACAQEAAgQBAAMBAQADBAIAAQADAAMCAAEAAwAEAgABAAQABAIAAQEBAQECAAECAgICAgABAgICAwIAAQICAwICAAECAgMDAgABAgMCAwIAAQIDAwMCAAEDAAMAAgABAwADAgIAAQMAAwMCAAEDAgMCAgABAwIDAwIAAQMDAwMCAQABAQEBAwABAgIAAgACAAMAAQICAAIAAgIDAAECAgACAAIDAwABAgIAAgADAAMAAQICAAIAAwIDAAECAgACAAMDAQABAAEAAQE=",
+            "HQABAAAAAQAAAgEAAQABAAEBAQABAwEAAQQBAAICAQACAwEAAgQBAAMCAQADAwEAAwQCAAEAAQABAgABAAEAAwIAAQABAAQCAAEAAwADAgABAAMABAIAAQAEAAQCAAEBAgECAgABAgECAQIAAQIBAwECAAEDAAMAAgABAwADAQIAAQMBAwECAQABAgECAwABAgIAAgACAAMAAQICAAIAAgEDAAECAgACAAMAAwABAgIAAgADAQEAAQABAAEC",
+        ]
+    )
+    assert res.json["formal_step"] == "placing the leftmost point in column 1"
+    assert res.json["op"] == "+"
+
+
+def test_col_placement_no_possiblities_for_index(client):
+    t = Tiling(
+        obstructions=(
+            GriddedPerm((0, 1), ((0, 0), (2, 0))),
+            GriddedPerm((0, 1), ((1, 1), (1, 1))),
+            GriddedPerm((1, 0), ((1, 1), (1, 1))),
+            GriddedPerm((0, 2, 1), ((0, 0), (0, 0), (0, 0))),
+            GriddedPerm((0, 2, 1), ((2, 0), (2, 0), (2, 0))),
+        ),
+        requirements=((GriddedPerm((0,), ((1, 1),)),),),
+        assumptions=(),
+    )
+    data = {
+        "tiling": encode_tiling(t),
+        "verify": _EMPTY_VERIFY,
+        "row": False,
+        "idx": 1,
+        "dir": DIR_WEST,
+    }
+    res = post(client, f"{_PATH_PREFIX}/rowcolplace", data)
+    assert_code_and_mimetype(res, code=400)
 
 
 def test_col_placement_eq_rule(client):
-    pass
+    t = Tiling.from_string("123").add_requirement(Perm((0,)), ((0, 0),))
+    data = {
+        "tiling": encode_tiling(t),
+        "verify": _EMPTY_VERIFY,
+        "row": False,
+        "idx": 0,
+        "dir": DIR_WEST,
+    }
+    res = post(client, f"{_PATH_PREFIX}/rowcolplace", data)
+    assert_code_and_mimetype(res)
+    assert res.json["op"] == "+"
+    assert all(
+        prop in res.json["original_rule"]
+        for prop in ["children", "class_module", "rule_class", "strategy"]
+    )
+    assert (
+        res.json["formal_step"]
+        == "placing the leftmost point in cell (0, 0) but only child and index 1 is non-empty"
+    )
+    assert (
+        res.json["strategy"]["class_module"]
+        == "tilings.strategies.requirement_placement"
+    )
+    assert res.json["strategy"]["strategy_class"] == "RequirementPlacementStrategy"
+    assert res.json["strategy"]["gps"][0] == {"patt": [0], "pos": [[0, 0]]}
+    assert (
+        res.json["children"][0]["key"]
+        == "CAABAAAAAQAAAgEAAQECAAEAAQABAgABAQIBAgIBAAABAAEDAAECAQABAAEAAwABAgEAAQABAgEAAQABAAAB"
+    )
