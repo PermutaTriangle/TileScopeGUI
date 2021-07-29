@@ -10,3 +10,21 @@
 # 9.
 # 10:
 # 11.
+
+
+from tilings import GriddedPerm, Tiling
+
+Tiling(
+    obstructions=(
+        GriddedPerm((0, 1), ((2, 0), (2, 0))),
+        GriddedPerm((0, 1, 2), ((0, 0), (0, 0), (0, 0))),
+        GriddedPerm((0, 1, 2), ((0, 0), (0, 0), (1, 0))),
+        GriddedPerm((0, 1, 2), ((0, 0), (0, 0), (2, 0))),
+        GriddedPerm((0, 1, 2), ((0, 0), (1, 0), (1, 0))),
+        GriddedPerm((0, 1, 2), ((0, 0), (1, 0), (2, 0))),
+        GriddedPerm((0, 1, 2), ((1, 0), (1, 0), (1, 0))),
+        GriddedPerm((0, 1, 2), ((1, 0), (1, 0), (2, 0))),
+    ),
+    requirements=(),
+    assumptions=(),
+).to_gui()

@@ -1,5 +1,15 @@
 import itertools
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+)
 
 from comb_spec_searcher.exception import StrategyDoesNotApply
 from comb_spec_searcher.strategies.rule import Rule
@@ -107,8 +117,8 @@ def _get_row_col_placement_input() -> Tuple[
         idx: int = data["idx"]
     except (TypeError, KeyError, ValueError, TilingDecodeException) as exc:
         raise BadRequest() from exc
-    if not (
-        isinstance(direction, int) and isinstance(row, bool) and isinstance(idx, int)
+    if not all(
+        (isinstance(direction, int), isinstance(row, bool), isinstance(idx, int))
     ):
         raise BadRequest()
     if direction < 0 or direction > 3:
@@ -177,7 +187,7 @@ def _get_cell_insertion_input() -> Tuple[Tiling, VerificationTactics, GriddedPer
         patt: str = data["patt"]
     except (TypeError, KeyError, ValueError, TilingDecodeException) as exc:
         raise BadRequest() from exc
-    if not (isinstance(x, int) and isinstance(y, int) and isinstance(patt, str)):
+    if not all((isinstance(x, int), isinstance(y, int), isinstance(patt, str))):
         raise BadRequest()
     if not patt.isdecimal():
         raise BadRequest()
@@ -200,10 +210,7 @@ def _get_cell_insertion_input() -> Tuple[Tiling, VerificationTactics, GriddedPer
 def cell_insertion() -> dict:
     """Apply cell insertion strategy to given tiling."""
     tiling, verification_tactics, gp = _get_cell_insertion_input()
-    try:
-        rule = RequirementInsertionStrategy((gp,))(tiling)
-    except StrategyDoesNotApply as exc:
-        raise BadRequest() from exc
+    rule = RequirementInsertionStrategy((gp,))(tiling)
     if all(
         tiling == ne_child
         for ne_child in filter(lambda t: not t.is_empty(), rule.children)
@@ -238,9 +245,13 @@ def _get_requirement_placement_input() -> Tuple[
         idx: int = data["idx"]
     except (TypeError, KeyError, ValueError, TilingDecodeException) as exc:
         raise BadRequest() from exc
-    if not (
-        isinstance(x, int) and isinstance(y, int) and isinstance(idx, int),
-        isinstance(direction, int),
+    if not all(
+        (
+            isinstance(x, int),
+            isinstance(y, int),
+            isinstance(idx, int),
+            isinstance(direction, int),
+        )
     ):
         raise BadRequest()
     _x, _y = tiling.dimensions
@@ -261,6 +272,11 @@ def _get_requirement_placement_input() -> Tuple[
 @strategies_blueprint.route("/reqplace", methods=["POST"])
 def requirement_placement() -> dict:
     """Apply requirement placement to given tiling."""
+
+    # As input is structured and validated now, the strategy is always
+    # valid and will always create an equiv rule. If change we might
+    # need some refactoring.
+
     (
         tiling,
         verification_tactics,
@@ -268,22 +284,18 @@ def requirement_placement() -> dict:
         idx,
         direction,
     ) = _get_requirement_placement_input()
-    try:
-        rule = RequirementPlacementStrategy(
-            (gp,), (idx,), direction, include_empty=True
-        )(tiling)
-    except StrategyDoesNotApply as exc:
-        raise BadRequest() from exc
+    rule = RequirementPlacementStrategy((gp,), (idx,), direction, include_empty=True)(
+        tiling
+    )
     if all(
         tiling == ne_child
         for ne_child in filter(lambda t: not t.is_empty(), rule.children)
     ):
         raise BadRequest()
-    if len(rule.non_empty_children()) == 1:
-        rule_json = rule_as_json(rule.to_equivalence_rule(), verification_tactics)
-        rule_json["original_rule"] = original_rule_as_json(rule)
-        return rule_json
-    return rule_as_json(rule, verification_tactics)
+    assert len(rule.non_empty_children()) == 1
+    rule_json = rule_as_json(rule.to_equivalence_rule(), verification_tactics)
+    rule_json["original_rule"] = original_rule_as_json(rule)
+    return rule_json
 
 
 def _get_add_assumption_input() -> Tuple[
@@ -306,7 +318,7 @@ def _get_add_assumption_input() -> Tuple[
         if not isinstance(coord, list) or len(coord) != 2:
             raise BadRequest()
         x, y = coord
-        if not (isinstance(x, int) and isinstance(y, int)):
+        if not all((isinstance(x, int), isinstance(y, int))):
             raise BadRequest()
         if x < 0 or y < 0 or x >= _x or y >= _y:
             raise BadRequest()
@@ -322,8 +334,6 @@ def add_assumption() -> dict:
         rule = AddAssumptionsStrategy((TrackingAssumption(gps),))(tiling)
     except StrategyDoesNotApply as exc:
         raise BadRequest() from exc
-    if not rule.children or rule.children[0] == tiling:
-        raise BadRequest()
     return rule_as_json(rule, verification_tactics)
 
 
@@ -394,6 +404,27 @@ def _get_sliding_input() -> Tuple[Tiling, VerificationTactics, int, int]:
     return tiling, verification_tactics, idx1, idx2
 
 
+def _slide_rules(tiling: Tiling) -> Iterator[Tuple[Rule, SlidingStrategy]]:
+    for rule in SlidingFactory(True)(tiling):
+        assert isinstance(rule.strategy, SlidingStrategy)
+        yield rule, rule.strategy
+
+
+def _find_slide(
+    tiling: Tiling,
+    sym_type_to_idx_set: Dict[int, Set[int]],
+    verification_tactics: VerificationTactics,
+) -> Optional[dict]:
+    return next(
+        (
+            rule_as_json(rule, verification_tactics)
+            for (rule, strat) in _slide_rules(tiling)
+            if {strat.av_12, strat.av_123} == sym_type_to_idx_set[strat.symmetry_type]
+        ),
+        None,
+    )
+
+
 @strategies_blueprint.route("/sliding", methods=["POST"])
 def sliding() -> dict:
     """Apply sliding strategy to given tiling."""
@@ -402,13 +433,9 @@ def sliding() -> dict:
     offset_idx_set = {cells - idx1 - 1, cells - idx2 - 1}
     idx_set = {idx1, idx2}
     sym_type_to_idx_set = {0: idx_set, 1: offset_idx_set, 2: offset_idx_set, 3: idx_set}
-
-    for rule in SlidingFactory(True)(tiling):
-        assert isinstance(rule.strategy, SlidingStrategy)
-        if {rule.strategy.av_12, rule.strategy.av_123} == sym_type_to_idx_set[
-            rule.strategy.symmetry_type
-        ]:
-            return rule_as_json(rule, verification_tactics)
+    output = _find_slide(tiling, sym_type_to_idx_set, verification_tactics)
+    if output is not None:
+        return output
     raise BadRequest()
 
 
