@@ -171,7 +171,6 @@ def row_col_placement() -> dict:
             rule_json = _col_placement(rule, verification_tactics, idx)
         if rule_json is not None:
             return rule_json
-
     raise BadRequest()
 
 
