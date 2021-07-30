@@ -30,7 +30,7 @@ Once installed, it can be run with the following command which will open a brows
 .. |pypi| image:: https://img.shields.io/pypi/v/tilescopegui
     :alt: PyPI
     :target: https://pypi.org/project/tilescopegui/
-.. |pycov| image:: https://img.shields.io/static/v1?label=py%20coverage&message=55%&color=orange
+.. |pycov| image:: https://img.shields.io/static/v1?label=py%20coverage&message=100%&color=brightgreen
    :alt: pycov
-.. |jscov| image:: https://img.shields.io/static/v1?label=js%20coverage&message=55%&color=orange
+.. |jscov| image:: https://img.shields.io/static/v1?label=js%20coverage&message=14%&color=red
    :alt: pycov
