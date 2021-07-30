@@ -1,0 +1,72 @@
+name: coverage
+
+on: [push]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: js cov
+        working-directory: ./ui
+        run: |
+          npm install
+          npm run coverage-json
+      - name: py cov
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python setup.py install
+          python -m pip install pytest-cov
+          python -m pytest --cov-config=.coveragerc --cov --cov-report term-missing
+      - name: Create local changes
+        run: |
+          pycov=$(grep -o '[^ ]\+$' <<< $(coverage report | tail -1))
+          pyval=${pycov::-1}
+          jsval=$(python3 -c "import pathlib; import json; print(round(json.loads(pathlib.Path.cwd().joinpath('ui', 'coverage', 'coverage-summary.json').read_text())['total']['lines']['pct']))")
+          color_for_coverage () {
+              color=brightgreen
+              if test $1 -lt 100
+              then
+                  color=green
+              fi
+              if test $1 -lt 85
+              then
+                  color=yellowgreen
+              fi
+              if test $1 -lt 70
+              then
+                  color=yellow
+              fi
+              if test $1 -lt 60
+              then
+                  color=orange
+              fi
+              if test $1 -lt 50
+              then
+                  color=red
+              fi
+              echo "$color"
+          }
+          sed -i -E "s#..\s\|pycov\|\simage::\s[^\n]+#$(printf "%q" ".. |pycov| image:: https://img.shields.io/static/v1?label=py%20coverage&message=$pycov&color=$(color_for_coverage $pyval)")#g" README.rst
+          sed -i -E "s#..\s\|jscov\|\simage::\s[^\n]+#$(printf "%q" ".. |jscov| image:: https://img.shields.io/static/v1?label=js%20coverage&message=$jsval%&color=$(color_for_coverage $jsval)")#g" README.rst
+      - name: Commit files
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.rst
+          git commit -m "Update coverage"
+      - name: Push changes
+        if: github.ref != 'refs/heads/master'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
