@@ -63,7 +63,10 @@ jobs:
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add README.rst
-          git commit -m "Update coverage"
+          if [[ `git status --porcelain --untracked-files=no` ]]
+          then
+            git commit -m "Update coverage"
+          fi
       - name: Push changes
         if: github.ref != 'refs/heads/master'
         uses: ad-m/github-push-action@master
