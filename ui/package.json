@@ -8,7 +8,8 @@
     "start": "parcel serve src/index.html",
     "lint": "eslint src --ext .js",
     "test": "jest",
-    "coverage": "jest --coverage"
+    "coverage": "jest --coverage",
+    "coverage-json": "jest --coverage --coverageReporters=\"json-summary\""
   },
   "repository": {
     "type": "git",

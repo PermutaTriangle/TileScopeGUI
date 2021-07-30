@@ -1,12 +1,7 @@
 ************
 TileScopeGui
 ************
-.. image:: https://github.com/PermutaTriangle/TileScopeGUI/workflows/tests/badge.svg
-    :alt: Travis
-    :target: https://github.com/PermutaTriangle/TileScopeGUI
-.. image:: https://img.shields.io/pypi/v/tilescopegui
-    :alt: PyPI
-    :target: https://pypi.org/project/tilescopegui/
+|build| |pypi| |pycov| |jscov|
 
 A web based GUI for expanding permutation classes and finding specifications.
 
@@ -27,3 +22,15 @@ Once installed, it can be run with the following command which will open a brows
 .. code-block:: bash
 
     tilescopegui
+
+
+.. |build| image:: https://github.com/PermutaTriangle/TileScopeGUI/workflows/tests/badge.svg
+    :alt: Travis
+    :target: https://github.com/PermutaTriangle/TileScopeGUI
+.. |pypi| image:: https://img.shields.io/pypi/v/tilescopegui
+    :alt: PyPI
+    :target: https://pypi.org/project/tilescopegui/
+.. |pycov| image:: https://img.shields.io/static/v1?label=py%20coverage&message=100%&color=brightgreen
+   :alt: pycov
+.. |jscov| image:: https://img.shields.io/static/v1?label=js%20coverage&message=14%&color=red
+   :alt: pycov
